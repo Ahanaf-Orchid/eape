@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { SITE } from "@/lib/site-config";
-import { api } from '@/lib/api';
+import { formApi } from '@/lib/api';
 
 interface FormData {
   twitter: string;
@@ -46,7 +46,7 @@ export default function InvestEarlyPage() {
     setSubmitting(true);
 
     try {
-      await api.submit('invest-early', {
+      await formApi.investEarly({
         ...formData,
         timestamp: new Date().toISOString(),
       });

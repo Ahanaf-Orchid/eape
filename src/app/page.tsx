@@ -170,6 +170,25 @@ export default function Home() {
   const [balanceLabelXp, setBalanceLabelXp] = useState<string>(SITE.xpLabel);
   const [startupOverlayVisible, setStartupOverlayVisible] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(0);
+  const [refreshCooldown, setRefreshCooldown] = useState(false);
+  const REFRESH_INTERVAL = 30_000;
+
+  const handleRefresh = async () => {
+    if (refreshCooldown) return;
+    if (Date.now() - lastRefresh < REFRESH_INTERVAL) {
+      setRefreshCooldown(true);
+      setTimeout(() => setRefreshCooldown(false), REFRESH_INTERVAL - (Date.now() - lastRefresh));
+      return;
+    }
+    setLastRefresh(Date.now());
+    setRefreshing(true);
+    if (loggedInUsername) {
+      await loadUserMxp(loggedInUsername);
+      await loadUserFullData(loggedInUsername);
+    }
+    setRefreshing(false);
+  };
   const [connectedEthWallet, setConnectedEthWallet] = useState("");
   const [connectedSolWallet, setConnectedSolWallet] = useState("");
 
@@ -210,13 +229,20 @@ export default function Home() {
     return null;
   };
 
-  const normalizeReviewStatus = (status?: string): string => {
-    if (!status) return "PENDING";
-    const s = status.toUpperCase().trim();
-    if (s === "APPROVED" || s === "VERIFIED") return "VERIFIED";
-    if (s === "REJECTED" || s === "DISQUALIFIED") return "DISQUALIFIED";
+  const normalizeReviewStatus = (status?: string, vStatus?: string): string => {
+    const s = (status || vStatus || "").toUpperCase().trim();
+    if (s === "APPROVED" || s === "VERIFIED" || s === "verified") return "VERIFIED";
+    if (s === "REJECTED" || s === "DISQUALIFIED" || s === "disqualified") return "DISQUALIFIED";
     if (s === "NEEDS_IMPROVEMENT") return "NEEDS_IMPROVEMENT";
     return "PENDING";
+  };
+
+  const getReviewStatus = (user: any): string => {
+    if (!user) return "PENDING";
+    return normalizeReviewStatus(
+      (user.reviewStatus as string) || "",
+      (user.verificationStatus as string) || ""
+    );
   };
 
   const normalizeTaskUrls = (urls: Record<string, string>): Record<string, string> => {
@@ -1455,6 +1481,14 @@ export default function Home() {
                 <div className="user-card-bottom">
                   <button className="btn secondary-btn switch-btn" onClick={handleLogout}>
                     ⇄ Switch
+                  </button>
+                  <button
+                    className="btn secondary-btn"
+                    onClick={handleRefresh}
+                    disabled={refreshCooldown}
+                    style={{ flex: "0 0 auto", minWidth: 70 }}
+                  >
+                    {refreshing ? "..." : refreshCooldown ? "⏳" : "🔄"}
                   </button>
                   <button
                     className={`btn ${walletConnected ? "secondary-btn wallet-connected-btn" : "primary-btn connect-btn"}`}

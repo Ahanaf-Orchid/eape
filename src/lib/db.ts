@@ -76,6 +76,17 @@ function createTables(db: Database.Database) {
       data TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS admin_audit_log (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      adminEmail TEXT NOT NULL,
+      field TEXT NOT NULL,
+      oldValue TEXT,
+      newValue TEXT,
+      note TEXT,
+      createdAt INTEGER NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS invest_early (
       id TEXT PRIMARY KEY,
       twitter TEXT,

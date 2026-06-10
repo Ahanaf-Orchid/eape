@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminApi } from '@/lib/api';
+import { SITE } from "@/lib/site-config";
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 interface User {
@@ -76,7 +77,7 @@ export default function HoldersPage() {
 
     // Filter by preset
     if (filterPreset === 'hasMxp') {
-      filtered = filtered.filter(u => (u.mxp || u.gxp || 0) > 0);
+      filtered = filtered.filter(u => (u.mxp || 0) > 0);
     } else if (filterPreset === 'verified') {
       filtered = filtered.filter(u => {
         const status = (u.reviewStatus || '').toUpperCase();
@@ -100,7 +101,7 @@ export default function HoldersPage() {
     // Sort
     filtered.sort((a, b) => {
       if (sortBy === 'mxp_desc') {
-        return (b.mxp || b.gxp || 0) - (a.mxp || a.gxp || 0);
+        return (b.mxp || 0) - (a.mxp || 0);
       }
       if (sortBy === 'referrals_desc') {
         return (b.referrals || 0) - (a.referrals || 0);
@@ -124,13 +125,27 @@ export default function HoldersPage() {
       return;
     }
 
+    if (Math.abs(adjustmentNum) > 10000) {
+      setSaveMessage('Max adjustment is ±10,000 per operation');
+      return;
+    }
+
+    if (adjustmentNum === 0) {
+      setSaveMessage('Adjustment cannot be zero');
+      return;
+    }
+
+    const currentMxp = selectedUser.mxp || 0;
+    const newMxp = Math.max(0, currentMxp + adjustmentNum);
+
+    if (!confirm(`Adjust ${selectedUser.username || selectedUser.id}'s ${SITE.xpLabel}?\n\nFrom: ${currentMxp}\nTo: ${newMxp}\nChange: ${adjustmentNum >= 0 ? '+' : ''}${adjustmentNum}\n\nNote: ${adjustmentNote || '(none)'}`)) {
+      return;
+    }
+
     setSaving(true);
     setSaveMessage('');
 
     try {
-      const currentMxp = selectedUser.mxp || selectedUser.gxp || 0;
-      const newMxp = Math.max(0, currentMxp + adjustmentNum);
-      
       await apiClient.updateUser(selectedUser.id, {
         mxp: newMxp,
         ...(adjustmentNote ? { adminNote: `[${new Date().toISOString()}] MXP adjusted by ${adjustmentNum}. Note: ${adjustmentNote}` } : {})
@@ -222,7 +237,7 @@ export default function HoldersPage() {
               >
                 <div className="user-main">
                   <span className="user-username">@{user.username || '—'}</span>
-                  <span className="user-mxp">{(user.mxp || user.gxp || 0).toLocaleString()} MXP</span>
+                  <span className="user-mxp">{(user.mxp || 0).toLocaleString()} MXP</span>
                 </div>
                 <div className="user-details">
                   <span className="user-wallet">{user.wallet ? `${user.wallet.slice(0, 6)}...${user.wallet.slice(-4)}` : '—'}</span>
@@ -246,7 +261,7 @@ export default function HoldersPage() {
             <div className="detail-info">
               <div className="detail-row">
                 <span className="detail-label">MXP</span>
-                <span className="detail-value highlight">{selectedUser.mxp || selectedUser.gxp || 0}</span>
+                <span className="detail-value highlight">{selectedUser.mxp || 0}</span>
               </div>
               <div className="detail-row">
                 <span className="detail-label">Referrals</span>

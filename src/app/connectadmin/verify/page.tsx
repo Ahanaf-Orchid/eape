@@ -132,11 +132,11 @@ export default function VerifyPage() {
     setInviters(Object.values(inviterMap).sort((a, b) => b.totalInvites - a.totalInvites));
   };
 
-  const mapReviewStatus = (status?: string): string => {
-    if (!status || status === 'pending' || status === 'PENDING') return 'pending';
-    if (status === 'approved' || status === 'verified' || status === 'VERIFIED') return 'verified';
-    if (status === 'rejected' || status === 'disqualified' || status === 'DISQUALIFIED') return 'disqualified';
-    if (status === 'needs_improvement' || status === 'NEEDS_IMPROVEMENT') return 'needs_improvement';
+  const mapReviewStatus = (status?: string, vStatus?: string): string => {
+    const s = (status || vStatus || "pending").toLowerCase();
+    if (s === 'approved' || s === 'verified') return 'verified';
+    if (s === 'rejected' || s === 'disqualified') return 'disqualified';
+    if (s === 'needs_improvement') return 'needs_improvement';
     return 'pending';
   };
 

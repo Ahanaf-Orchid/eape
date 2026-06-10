@@ -38,6 +38,9 @@ export const publicApi = {
 };
 
 export const userApi = {
+  lookup(username: string) {
+    return fetchJson(`/api/user/lookup?username=${encodeURIComponent(username)}`);
+  },
   register(data: {
     username: string;
     wallet?: string;

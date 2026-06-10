@@ -184,6 +184,25 @@ export default function Home() {
   const [balanceLabelXp, setBalanceLabelXp] = useState<string>(SITE.xpLabel);
   const [startupOverlayVisible, setStartupOverlayVisible] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(0);
+  const [refreshCooldown, setRefreshCooldown] = useState(false);
+  const REFRESH_INTERVAL = 30_000;
+
+  const handleRefresh = async () => {
+    if (refreshCooldown) return;
+    if (Date.now() - lastRefresh < REFRESH_INTERVAL) {
+      setRefreshCooldown(true);
+      setTimeout(() => setRefreshCooldown(false), REFRESH_INTERVAL - (Date.now() - lastRefresh));
+      return;
+    }
+    setLastRefresh(Date.now());
+    setRefreshing(true);
+    if (loggedInUsername) {
+      await loadUserMxp(loggedInUsername);
+      await loadUserFullData(loggedInUsername);
+    }
+    setRefreshing(false);
+  };
   const [connectedEthWallet, setConnectedEthWallet] = useState("");
   const [connectedSolWallet, setConnectedSolWallet] = useState("");
 
@@ -1499,6 +1518,14 @@ export default function Home() {
                 <div className="user-card-bottom">
                   <button className="btn secondary-btn switch-btn" onClick={handleLogout}>
                     ⇄ Switch
+                  </button>
+                  <button
+                    className="btn secondary-btn"
+                    onClick={handleRefresh}
+                    disabled={refreshCooldown}
+                    style={{ flex: "0 0 auto", minWidth: 70 }}
+                  >
+                    {refreshing ? "..." : refreshCooldown ? "⏳" : "🔄"}
                   </button>
                   <button
                     className={`btn ${walletConnected ? "secondary-btn wallet-connected-btn" : "primary-btn connect-btn"}`}

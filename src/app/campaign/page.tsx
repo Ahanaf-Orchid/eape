@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SITE } from "@/lib/site-config";
-import { api } from "@/lib/api";
+import { publicApi, userApi } from "@/lib/api";
 
 interface CampaignTask {
   id: string;
@@ -53,15 +53,16 @@ export default function CampaignPage() {
 
   const loadConfig = async () => {
     try {
-      const data = await api.get("config/campaign");
+      const result = await publicApi.getConfig();
+      const data = result.campaign as Record<string, unknown> | null;
 
-      if (data !== null) {
+      if (data) {
         const loadedConfig: CampaignConfig = {
-          enabled: data.enabled ?? false,
-          buttonLabel: data.buttonLabel ?? "JOIN DAILY CAMPAIGN",
-          pageTitle: data.pageTitle ?? "DAILY CAMPAIGN",
-          version: data.version ?? 1,
-          tasks: data.tasks ?? {},
+          enabled: (data.enabled as boolean) ?? false,
+          buttonLabel: (data.buttonLabel as string) ?? "JOIN DAILY CAMPAIGN",
+          pageTitle: (data.pageTitle as string) ?? "DAILY CAMPAIGN",
+          version: (data.version as number) ?? 1,
+          tasks: (data.tasks as Record<string, CampaignTask>) ?? {},
         };
         setConfig(loadedConfig);
         setCampaignVersion(loadedConfig.version);
@@ -79,9 +80,12 @@ export default function CampaignPage() {
         setTasks(tasksArray);
       }
 
-      const pageData = await api.get("config/pageRuntime/campaign");
-      if (pageData !== null) {
-        setPageAvailable(pageData.enabled !== false);
+      const pageData = result.pageRuntime as Record<string, unknown> | null;
+      const campaignRuntime = pageData?.campaign as Record<string, unknown> | null;
+      if (campaignRuntime) {
+        setPageAvailable(campaignRuntime.enabled !== false);
+      } else {
+        setPageAvailable(!!data?.enabled);
       }
     } catch (error) {
       console.error("Load config error:", error);
@@ -90,40 +94,32 @@ export default function CampaignPage() {
 
   const verifyUser = async (usernameToVerify: string) => {
     try {
-      const users = await api.get("users");
+      const result = await userApi.lookup(usernameToVerify);
 
-      if (users !== null) {
-        const normalizedUsername = usernameToVerify.toLowerCase();
+      if (result?.found) {
+        setUserPoints(result.mxp || 0);
+        setCampaignInputs(result.campaignInputs || {});
 
-        for (const key in users) {
-          if (users[key].username?.toLowerCase() === normalizedUsername) {
-            const userData = users[key];
-            setUserPoints(userData.mxp || 0);
-            setCampaignInputs(userData.campaignInputs || {});
-            
-            // Load MXP breakdown if available
-            setMxpBreakdown({
-              fromUsername: userData.mxpFromUsername || userData.gxpFromUsername || 0,
-              fromInvitee: userData.mxpFromInvitee || userData.gxpFromInvitee || 0,
-              fromReferrals: userData.mxpFromReferrals || userData.gxpFromReferrals || 0,
-              fromTasks: userData.mxpFromTasks || userData.gxpFromTasks || userData.campaignPoints || 0,
-            });
-            
-            const userCampaignVersion = userData.campaignVersion || 1;
-            setCampaignVersion(userCampaignVersion);
-            
-            const dbCompleted = userData.campaignCompletedTasks || [];
-            if (userCampaignVersion === config.version) {
-              setCompletedTasks(dbCompleted);
-            } else {
-              setCompletedTasks([]);
-            }
-            
-            setIsIdentified(true);
-            setShowIdModal(false);
-            return true;
-          }
+        setMxpBreakdown({
+          fromUsername: result.mxpFromUsername || 0,
+          fromInvitee: result.mxpFromInvitee || 0,
+          fromReferrals: result.mxpFromReferrals || 0,
+          fromTasks: result.mxpFromTasks || 0,
+        });
+
+        const userCampaignVersion = result.campaignVersion || 1;
+        setCampaignVersion(userCampaignVersion);
+
+        const dbCompleted = result.campaignCompletedTasks || [];
+        if (userCampaignVersion === config.version) {
+          setCompletedTasks(dbCompleted);
+        } else {
+          setCompletedTasks([]);
         }
+
+        setIsIdentified(true);
+        setShowIdModal(false);
+        return true;
       }
       return false;
     } catch (error) {
@@ -183,34 +179,27 @@ export default function CampaignPage() {
 
     setLoading(true);
     try {
-      const users = await api.get("users");
+      const result = await userApi.lookup(username);
 
-      if (users !== null) {
-        const normalizedUsername = username.toLowerCase();
+      if (result?.found) {
+        setUserPoints(result.mxp || 0);
+        setCampaignInputs(result.campaignInputs || {});
 
-        for (const key in users) {
-          if (users[key].username?.toLowerCase() === normalizedUsername) {
-            const userData = users[key];
-            setUserPoints(userData.mxp || 0);
-            setCampaignInputs(userData.campaignInputs || {});
+        const userCampaignVersion = result.campaignVersion || 1;
+        setCampaignVersion(userCampaignVersion);
 
-            const userCampaignVersion = userData.campaignVersion || 1;
-            setCampaignVersion(userCampaignVersion);
-
-            const dbCompleted = userData.campaignCompletedTasks || [];
-            if (userCampaignVersion === config.version) {
-              setCompletedTasks(dbCompleted);
-              localStorage.setItem(getLocalStorageKey(username, config.version), JSON.stringify(dbCompleted));
-            } else {
-              setCompletedTasks([]);
-            }
-
-            setIsIdentified(true);
-            setShowIdModal(false);
-            setLoading(false);
-            return;
-          }
+        const dbCompleted = result.campaignCompletedTasks || [];
+        if (userCampaignVersion === config.version) {
+          setCompletedTasks(dbCompleted);
+          localStorage.setItem(getLocalStorageKey(username, config.version), JSON.stringify(dbCompleted));
+        } else {
+          setCompletedTasks([]);
         }
+
+        setIsIdentified(true);
+        setShowIdModal(false);
+        setLoading(false);
+        return;
       }
 
       setLoading(false);
@@ -238,33 +227,18 @@ export default function CampaignPage() {
   const completeTask = async (task: CampaignTask, userInput: string) => {
     if (!username) return;
 
-    const normalizedUsername = username.toLowerCase().replace(/^@/, "");
-
     setRewardMessage("");
 
     try {
-      const users = await api.get("users");
-
-      if (!users) return;
-
-      let userKey: string | null = null;
-      let userData: any = null;
-
-      for (const key in users) {
-        if (
-          users[key].username?.toLowerCase() === normalizedUsername ||
-          users[key].username?.toLowerCase() === `@${normalizedUsername}`
-        ) {
-          userKey = key;
-          userData = users[key];
-          break;
-        }
+      // Look up the userId first
+      const lookup = await userApi.lookup(username);
+      if (!lookup?.found || !lookup.userId) {
+        setRewardMessage("User not found. Please re-identify.");
+        return;
       }
 
-      if (!userKey) return;
-
-      const currentCampaignVersion = userData.campaignVersion || 1;
-      const dbCompleted: string[] = userData.campaignCompletedTasks || [];
+      const currentCampaignVersion = lookup.campaignVersion || 1;
+      const dbCompleted: string[] = lookup.campaignCompletedTasks || [];
 
       if (currentCampaignVersion !== config.version) {
         setRewardMessage("Campaign updated! Starting fresh.");
@@ -273,28 +247,29 @@ export default function CampaignPage() {
         return;
       }
 
-      await api.transaction(`users/${userKey}`, {});
+      // Use the dedicated backend endpoint — actually saves to DB
+      const result = await userApi.completeTask(lookup.userId, task.id, userInput || undefined);
 
-      const updatedUser = await api.get(`users/${userKey}`);
-      if (updatedUser !== null) {
-        setUserPoints(updatedUser.mxp || 0);
+      if (result.success) {
+        const updated = result.user;
+        setUserPoints(updated.mxp || 0);
 
-        const newCompleted =
-          updatedUser.campaignCompletedTasks || completedTasks;
+        const newCompleted = updated.campaignCompletedTasks || dbCompleted;
         setCompletedTasks(newCompleted);
         saveLocalCompletion(username, config.version, newCompleted);
-        setCampaignInputs(updatedUser.campaignInputs || {});
+        setCampaignInputs(updated.campaignInputs || {});
 
         if (currentCampaignVersion !== config.version) {
-          setRewardMessage(`+${task.points} MXP earned! (New campaign)`);
-          setTimeout(() => setRewardMessage(""), 3000);
-        } else if (!dbCompleted.includes(task.id)) {
-          setRewardMessage(`+${task.points} MXP earned!`);
-          setTimeout(() => setRewardMessage(""), 3000);
+          setRewardMessage(`+${task.points} ${SITE.xpLabel} earned! (New campaign)`);
+        } else {
+          setRewardMessage(`+${task.points} ${SITE.xpLabel} earned!`);
         }
+        setTimeout(() => setRewardMessage(""), 3000);
+      } else {
+        setRewardMessage(result.message || "Error completing task. Please try again.");
       }
     } catch (error) {
-      console.error("Complete task error:", error);
+      console.error("Task completion error:", error);
       setRewardMessage("Error completing task. Please try again.");
     }
   };
@@ -564,7 +539,7 @@ export default function CampaignPage() {
                   alt={SITE.xpLabel}
                   className="total-mxp-logo"
                 />
-                <span>YOUR TOTAL: {userPoints} MXP</span>
+                <span>YOUR TOTAL: {userPoints} {SITE.xpLabel}</span>
               </div>
             )}
             {isIdentified && userPoints > 0 && (

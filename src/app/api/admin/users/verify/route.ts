@@ -29,21 +29,25 @@ export async function POST(req: NextRequest) {
       }
 
       if (action === "verify") {
-        if (user.verificationStatus === "disqualified") {
+        if (user.verificationStatus === "disqualified" || user.reviewStatus === "DISQUALIFIED") {
           failedUsers.push({ userId, reason: "User has been disqualified" });
           continue;
         }
         userUpdate(userId, {
           verificationStatus: "verified",
+          reviewStatus: "VERIFIED",
           verifiedAt: Date.now(),
           verifiedBy: auth.email,
+          reviewedAt: new Date().toISOString(),
         });
         verifiedUsers.push(userId);
       } else {
         userUpdate(userId, {
           verificationStatus: "disqualified",
+          reviewStatus: "DISQUALIFIED",
           disqualifiedAt: Date.now(),
           disqualifiedBy: auth.email,
+          reviewedAt: new Date().toISOString(),
         });
         verifiedUsers.push(userId);
       }
