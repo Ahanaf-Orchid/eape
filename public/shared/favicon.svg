@@ -1,0 +1,9 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="32" height="32" fill="#9E1B1E"/>
+  
+  <!-- NERDS Text -->
+  <text x="16" y="22" font-family="Anton, sans-serif" font-size="8" font-weight="bold" text-anchor="middle" fill="#F2F0A1">
+    NERDS
+  </text>
+</svg>

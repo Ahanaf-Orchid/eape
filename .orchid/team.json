@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "status": "idle",
+  "goal": null,
+  "analysis": null,
+  "slotCatalog": {
+    "planners": [
+      {
+        "id": "planner-1",
+        "group": "planner",
+        "model": "openai/gpt-5.5",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "deny",
+          "bash": "deny",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 1,
+        "callableAgent": "general"
+      },
+      {
+        "id": "planner-2",
+        "group": "planner",
+        "model": "openai/gpt-5.5",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "deny",
+          "bash": "deny",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 2,
+        "callableAgent": "general"
+      },
+      {
+        "id": "planner-3",
+        "group": "planner",
+        "model": "openai/gpt-5.5",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "deny",
+          "bash": "deny",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 3,
+        "callableAgent": "general"
+      }
+    ],
+    "builders": [
+      {
+        "id": "builder-1",
+        "group": "builder",
+        "model": "anthropic/claude-sonnet-4-6",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "allow",
+          "bash": "ask",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 1,
+        "callableAgent": "general"
+      },
+      {
+        "id": "builder-2",
+        "group": "builder",
+        "model": "anthropic/claude-sonnet-4-6",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "allow",
+          "bash": "ask",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 2,
+        "callableAgent": "general"
+      },
+      {
+        "id": "builder-3",
+        "group": "builder",
+        "model": "anthropic/claude-sonnet-4-6",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "allow",
+          "bash": "ask",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 3,
+        "callableAgent": "general"
+      },
+      {
+        "id": "builder-4",
+        "group": "builder",
+        "model": "anthropic/claude-sonnet-4-6",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "allow",
+          "bash": "ask",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 4,
+        "callableAgent": "general"
+      },
+      {
+        "id": "builder-5",
+        "group": "builder",
+        "model": "anthropic/claude-sonnet-4-6",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "allow",
+          "bash": "ask",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 5,
+        "callableAgent": "general"
+      },
+      {
+        "id": "builder-6",
+        "group": "builder",
+        "model": "anthropic/claude-sonnet-4-6",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "allow",
+          "bash": "ask",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 6,
+        "callableAgent": "general"
+      },
+      {
+        "id": "builder-7",
+        "group": "builder",
+        "model": "anthropic/claude-sonnet-4-6",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "allow",
+          "bash": "ask",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 7,
+        "callableAgent": "general"
+      },
+      {
+        "id": "builder-8",
+        "group": "builder",
+        "model": "anthropic/claude-sonnet-4-6",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "allow",
+          "bash": "ask",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 8,
+        "callableAgent": "general"
+      }
+    ],
+    "reviewers": [
+      {
+        "id": "reviewer-1",
+        "group": "reviewer",
+        "model": "openai/gpt-5.5",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "deny",
+          "bash": "deny",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 1,
+        "callableAgent": "general"
+      },
+      {
+        "id": "reviewer-2",
+        "group": "reviewer",
+        "model": "openai/gpt-5.5",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "deny",
+          "bash": "deny",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 2,
+        "callableAgent": "general"
+      },
+      {
+        "id": "reviewer-3",
+        "group": "reviewer",
+        "model": "openai/gpt-5.5",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "deny",
+          "bash": "deny",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 3,
+        "callableAgent": "general"
+      }
+    ],
+    "mergers": [
+      {
+        "id": "merger-1",
+        "group": "merger",
+        "model": "openai/gpt-5.5",
+        "fallbackModel": "openai/gpt-5.4",
+        "permission": {
+          "read": "allow",
+          "edit": "allow",
+          "bash": "ask",
+          "task": "deny",
+          "webfetch": "allow"
+        },
+        "enabled": true,
+        "priority": 1,
+        "callableAgent": "general"
+      }
+    ]
+  },
+  "selectedSquad": null,
+  "workPackages": [],
+  "workerReadiness": [],
+  "team": {
+    "planners": [],
+    "builders": [],
+    "reviewers": [],
+    "merger": null
+  },
+  "tasks": [],
+  "worktrees": [],
+  "launchCommands": [],
+  "workers": [],
+  "workerEvents": [],
+  "agentResults": [],
+  "reviews": [],
+  "checkpoints": [],
+  "mergeQueue": [],
+  "updatedAt": "2026-06-07T16:30:24.249Z"
+}
