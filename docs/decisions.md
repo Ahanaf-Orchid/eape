@@ -246,3 +246,74 @@ This file preserves historical decisions. For what is currently live, see the ar
 **Date:** 2026-03-24
 
 **Decision:** Homepage CTA visibility controlled via tiny remote config read.
+
+---
+
+## Phase 12: Contact System
+
+**Date:** 2026-06-10
+
+**Decision:** Replace `/partnership` with a general `/contact` page. Contact messages stored in new `contacts` table (JSON blob, separate from old `partnerships` column-based table). Admin inbox at `/connectadmin/contacts` with expandable cards, reply via `mailto:`, close/delete actions.
+
+**Reason:**
+- Old partnership form was single-purpose
+- New contact system handles all inquiries
+- Admin needs a way to manage messages (was going to email directly)
+- `mailto:` reply is simpler than building email sending infrastructure
+
+---
+
+## Phase 14A: Verification Field Unification
+
+**Date:** 2026-06-10
+
+**Decision:** Unify `verificationStatus` and `reviewStatus` into a single verification flow. Backend now syncs both fields on every write. Frontend reads both with fallback.
+
+**Reason:**
+- Bulk verify endpoint (`POST /api/admin/users/verify`) wrote `verificationStatus`
+- Single-user verify (`POST /api/admin/users/update`) wrote `reviewStatus`
+- Frontend only read `reviewStatus` — bulk verify had no visible effect
+- Fix: Backend auto-syncs both fields on all writes. Lookup API falls back: `reviewStatus || verificationStatus`
+
+---
+
+## Phase 14C: Campaign Page Rewrite
+
+**Date:** 2026-06-10
+
+**Decision:** Rewrite campaign page to use dedicated endpoints instead of downloading entire user database to browser.
+
+**Reason:**
+- Old code called `api.get("users")` — exposed all PII to every visitor
+- `api.transaction()` was a NO-OP — task completions never saved
+- `userApi.completeTask()` existed but was unused
+- `userApi.lookup()` now provides username→user mapping without data leak
+- Campaign config now loaded via `publicApi.getConfig()` instead of deprecated routes
+
+---
+
+## Phase 14C: MXP Audit Trail
+
+**Date:** 2026-06-10
+
+**Decision:** Add `admin_audit_log` table to track every MXP change with: userId, adminEmail, field, oldValue, newValue, note, timestamp. Add validation: max ±10K per adjustment, max 1M total MXP, rate limited 30/min.
+
+**Reason:**
+- No history of who changed what MXP and when
+- `adminNote` was stored on user record (easily overwritten)
+- No limits meant admin could set any value
+- Audit log is append-only, never overwritten
+
+---
+
+## Phase 14D: Refresh Button
+
+**Date:** 2026-06-10
+
+**Decision:** Add a refresh button (🔄/⏳) to homepage and checknfts. 30-second cooldown. Reloads user data (mxp, referrals, status) from API. No polling, no auto-refresh.
+
+**Reason:**
+- Users needed a way to see updated verification status without logging out/in
+- 30s cooldown prevents abuse
+- Simpler than auto-refresh or WebSockets
+- Architecture explicitly avoids polling
