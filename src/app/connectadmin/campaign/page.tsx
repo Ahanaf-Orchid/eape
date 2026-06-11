@@ -21,6 +21,8 @@ interface CampaignConfig {
   pageTitle: string;
   version: number;
   tasks: Record<string, CampaignTask>;
+  dailyRewardEnabled: boolean;
+  dailyRewardMxp: number;
 }
 
 const DEFAULT_TASK: CampaignTask = {
@@ -39,6 +41,8 @@ const DEFAULT_CONFIG: CampaignConfig = {
   pageTitle: 'DAILY CAMPAIGN',
   version: 1,
   tasks: {},
+  dailyRewardEnabled: true,
+  dailyRewardMxp: 20,
 };
 
 export default function CampaignPage() {
@@ -79,6 +83,8 @@ export default function CampaignPage() {
           pageTitle: data.pageTitle ?? 'DAILY CAMPAIGN',
           version: data.version ?? 1,
           tasks: data.tasks ?? {},
+          dailyRewardEnabled: data.dailyRewardEnabled !== false,
+          dailyRewardMxp: data.dailyRewardMxp ?? 20,
         });
       }
     } catch (error) {
@@ -110,6 +116,8 @@ export default function CampaignPage() {
         pageTitle: config.pageTitle,
         version: config.version,
         tasks: config.tasks,
+        dailyRewardEnabled: config.dailyRewardEnabled,
+        dailyRewardMxp: config.dailyRewardMxp,
       });
       
       setSuccessMessage('Campaign saved successfully!');
@@ -377,6 +385,28 @@ function CampaignEditor({
               <button onClick={onIncrementVersion} style={versionBtn}>+ BUMP</button>
             </div>
             <span style={versionHint}>Bump version to reset user progress</span>
+          </div>
+          <div style={formGroup}>
+            <label style={labelStyle}>Daily Reward</label>
+            <select
+              value={config.dailyRewardEnabled ? 'true' : 'false'}
+              onChange={(e) => onChange({ ...config, dailyRewardEnabled: e.target.value === 'true' })}
+              style={inputStyle}
+            >
+              <option value="true">Enabled</option>
+              <option value="false">Disabled</option>
+            </select>
+          </div>
+          <div style={formGroup}>
+            <label style={labelStyle}>Daily Reward MXP</label>
+            <input
+              type="number"
+              value={config.dailyRewardMxp}
+              onChange={(e) => onChange({ ...config, dailyRewardMxp: Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)) })}
+              style={inputStyle}
+              min={1}
+              max={1000}
+            />
           </div>
         </div>
       </div>

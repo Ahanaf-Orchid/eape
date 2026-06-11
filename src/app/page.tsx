@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { api, publicApi, userApi } from "@/lib/api";
+import { publicApi, userApi } from "@/lib/api";
 import { SITE, UI_STRINGS } from "@/lib/site-config";
 import Step from "@/components/Step";
 import Task from "@/components/Task";
@@ -388,11 +388,11 @@ export default function Home() {
     usernameExists: false,
     invitee: false,
     inviteeNotFound: false,
+    inviteeRequired: false,
     wallet: false,
     walletExists: false,
   });
 
-  const [cachedUsers, setCachedUsers] = useState<Map<string, CachedUser>>(new Map());
   const [referralParam, setReferralParam] = useState("");
 
   const loadRuntimeCache = () => {
@@ -607,50 +607,6 @@ export default function Home() {
     }
   };
 
-  const loadCache = async () => {
-    try {
-      const users = await api.get("users");
-
-      const newCache = new Map<string, CachedUser>();
-
-      if (users !== null) {
-        for (const key in users) {
-          const user = users[key];
-          newCache.set(user.username?.toLowerCase(), {
-            referrals: user.referrals || 0,
-            status: user.status || statusNames.default,
-            wallet: user.wallet || "",
-            comment1: user.comment_1 || "",
-            comment2: user.comment_2 || "",
-            comment3: user.comment_3 || "",
-            mxp: user.mxp || 0,
-            mxpFromUsername: user.mxpFromUsername || 0,
-            mxpFromInvitee: user.mxpFromInvitee || 0,
-            mxpFromReferrals: user.mxpFromReferrals || 0,
-            mxpFromTasks: user.mxpFromTasks || 0,
-            reviewStatus: normalizeReviewStatus(user.reviewStatus),
-            fakeMxpBlocked: normalizeReviewStatus(user.reviewStatus) === "NEEDS_IMPROVEMENT" || normalizeReviewStatus(user.reviewStatus) === "DISQUALIFIED",
-          });
-        }
-      }
-
-      setCachedUsers(newCache);
-      localStorage.setItem(SITE.lsKeys.cache, JSON.stringify(Array.from(newCache.entries())));
-    } catch (error) {
-      console.error("Cache error:", error);
-      try {
-        const saved = localStorage.getItem(SITE.lsKeys.cache);
-        if (saved) {
-          const parsed = JSON.parse(saved) as [string, CachedUser][];
-          const loadedCache = new Map<string, CachedUser>(parsed);
-          setCachedUsers(loadedCache);
-        }
-      } catch (e) {
-        console.error("LocalStorage error:", e);
-      }
-    }
-  };
-
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -672,28 +628,6 @@ export default function Home() {
   };
 
   const checkUserStatus = async (username: string, forceRefresh = false) => {
-    const normalized = username.toLowerCase();
-
-    if (!forceRefresh && cachedUsers.has(normalized)) {
-      try {
-        const lookup = await userApi.lookup(username);
-        if (lookup?.found) {
-          const normalizedFresh = normalizeReviewStatus(lookup.reviewStatus, lookup.verificationStatus);
-          if (normalizedFresh !== cachedUsers.get(normalized)?.reviewStatus) {
-            const data: CachedUser = {
-              ...cachedUsers.get(normalized)!,
-              reviewStatus: normalizedFresh,
-              fakeMxpBlocked: normalizedFresh === "NEEDS_IMPROVEMENT" || normalizedFresh === "DISQUALIFIED",
-              mxp: lookup.mxp || 0,
-            };
-            setCachedUsers((prev) => new Map(prev.set(normalized, data)));
-            return data;
-          }
-        }
-      } catch (e) {}
-      return cachedUsers.get(normalized)!;
-    }
-
     try {
       const lookup = await userApi.lookup(username);
 
@@ -714,7 +648,6 @@ export default function Home() {
           fakeMxpBlocked: normalizeReviewStatus(lookup.reviewStatus) === "NEEDS_IMPROVEMENT" || normalizeReviewStatus(lookup.reviewStatus) === "DISQUALIFIED",
         };
 
-        setCachedUsers((prev) => new Map(prev.set(normalized, data)));
         return data;
       }
       return null;
@@ -735,6 +668,7 @@ export default function Home() {
       usernameExists: false,
       invitee: false,
       inviteeNotFound: false,
+      inviteeRequired: false,
       wallet: false,
       walletExists: false,
     });
@@ -812,6 +746,11 @@ export default function Home() {
           return;
         }
       }
+    }
+
+    if (!noInv && !inviteeUser) {
+      setErrors((prev) => ({ ...prev, inviteeRequired: true }));
+      return;
     }
 
     setSubStep(inviteeUser);
@@ -978,19 +917,6 @@ export default function Home() {
       });
 
       if (result.success) {
-        setCachedUsers((prev) =>
-          new Map(
-            prev.set(twitter.toLowerCase(), {
-              referrals: 0,
-              status: statusNames.default,
-              wallet: wallet,
-              mxp: (result.user.mxp as number) || 0,
-              comment1: commentLink1,
-              comment2: commentLink2,
-            })
-          )
-        );
-
         const refLink = `${window.location.origin}?ref=${encodeURIComponent(twitter)}`;
         setSuccessData({
           refLink,
@@ -1045,9 +971,8 @@ export default function Home() {
     setEntryNotFound(false);
     setEntryLoading(true);
 
-    // Check cache first, then API
     const normalized = username.toLowerCase();
-    let userData = cachedUsers.has(normalized) ? cachedUsers.get(normalized)! : await checkUserStatus(username);
+    const userData = await checkUserStatus(username);
 
     setEntryLoading(false);
 
@@ -1114,36 +1039,9 @@ export default function Home() {
   const loadLeaderboardData = async (tab: 'referrers' | 'holders') => {
     setLeaderboardLoading(true);
     try {
-      const users = await api.get("users");
-      if (users !== null) {
-        const userArray: {id: string; username?: string; referrals?: number; mxp?: number}[] = [];
-        
-        Object.entries(users).forEach(([key, value]: [string, any]) => {
-          if (value.username) {
-            userArray.push({
-              id: key,
-              username: value.username,
-              referrals: value.referrals || 0,
-              mxp: value.mxp || 0,
-            });
-          }
-        });
-
-        const sorted = userArray.sort((a, b) => {
-          if (tab === 'referrers') {
-            return (b.referrals || 0) - (a.referrals || 0);
-          } else {
-            return (b.mxp || 0) - (a.mxp || 0);
-          }
-        });
-
-        const top15 = sorted.slice(0, 15).map((user, index) => ({
-          rank: index + 1,
-          username: user.username || '',
-          value: tab === 'referrers' ? (user.referrals || 0) : (user.mxp || 0),
-        }));
-
-        setLeaderboardData(top15);
+      const json = await publicApi.leaderboard(tab);
+      if (json.success && json.data) {
+        setLeaderboardData(json.data);
         setLeaderboardTab(tab);
       }
     } catch (error) {
@@ -1460,6 +1358,12 @@ export default function Home() {
                       🚀 GET WHITELISTED
                     </button>
                     <button
+                      className="btn secondary-btn entry-continue-btn"
+                      onClick={openAlreadyModal}
+                    >
+                      ✅ ALREADY WHITELISTED
+                    </button>
+                    <button
                       className="btn text-btn entry-tryagain-btn"
                       onClick={() => {
                         setEntryNotFound(false);
@@ -1538,12 +1442,13 @@ export default function Home() {
               value={invitee}
               onChange={(e) => {
                 setInvitee(e.target.value);
-                setErrors((prev) => ({ ...prev, invitee: false, inviteeNotFound: false }));
+                setErrors((prev) => ({ ...prev, invitee: false, inviteeNotFound: false, inviteeRequired: false }));
               }}
               disabled={noInvitee}
             />
             {errors.invitee && <p className="error-msg">Invalid inviter username</p>}
             {errors.inviteeNotFound && <p className="error-msg">Inviter not found in database</p>}
+            {errors.inviteeRequired && <p className="error-msg">Enter an inviter or select No inviter.</p>}
           </div>
 
           <div className="mxp-teaser" style={{ marginTop: 10 }}>
@@ -2237,9 +2142,9 @@ export default function Home() {
                     Your registered wallets are treated as connected. No blockchain connection required.
                   </p>
                   {(() => {
-                    const userData = cachedUsers.get(loggedInUsername.toLowerCase());
-                    const ethWallet = userData?.wallet || "";
-                    const solWalletVal = (userData as any)?.sol_wallet || "";
+                    const userData = {} as any;
+                    const ethWallet: string = "";
+                    const solWalletVal: string = "";
                     return (
                       <div className="demo-wallet-info">
                         {ethWallet && (

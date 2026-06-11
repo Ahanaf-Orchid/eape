@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createSession } from "@/lib/admin-auth";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 
 export async function POST(req: NextRequest) {
+  const limit = checkRateLimit(req, "admin-login", 5, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Try again later." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    );
+  }
+
   try {
     const { email, password } = await req.json();
 

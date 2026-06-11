@@ -17,7 +17,7 @@ export default function Task({ id, label, url, completed, mxp, logoSrc, onComple
   const [loading, setLoading] = useState(false);
 
   const handleClick = () => {
-    if (completed) return;
+    if (completed) { window.open(url, "_blank"); return; }
     
     setLoading(true);
     setTimeout(() => {

@@ -40,9 +40,8 @@ This file preserves historical decisions. For what is currently live, see the ar
   - `POST /api/admin/users/verify` — Admin (authenticated)
   - `GET /api/admin/users` — Admin, paginated
   - `GET /api/admin/stats` — Admin
-  - `POST /api/form/partnership` — Form
-  - `POST /api/form/invest-early` — Form
-- Keep old catch-all for backward compat with deprecation notice
+  - `POST /api/form/contact` — Form (replaced partnership + invest-early)
+- `/api/data/[path]` locked to 410 Gone (Phase 15E)
 
 ### 11C: Layer 2 Defaults Centralization
 - Move all default task config, QT templates, status names/levels, step titles, button labels, balance labels, banner path, campaign defaults, mxpRewards into `site-config.ts`

@@ -270,8 +270,12 @@ Frontend shows which users succeeded/failed.
 | Method | Endpoint | Purpose | Layer |
 |--------|----------|---------|-------|
 | GET | `/api/config/public` | Fetch all public config | 2 |
+| GET | `/api/leaderboard` | Sanitized leaderboard (rank, username, value) | 3 |
+| GET | `/api/user/lookup` | Lookup user by username | 3 |
 | POST | `/api/user/register` | Register (final submit of multi-step flow) | 3 |
-| POST | `/api/campaign/complete-task` | Mark task done, get reward | 3 |
+| POST | `/api/campaign/complete-task` | Complete single task | 3 |
+| POST | `/api/campaign/final-submit` | Batch task completion | 3 |
+| POST | `/api/campaign/claim-daily-reward` | Daily reward claim (once per day) | 3 |
 
 ### Authenticated endpoints (admin session required):
 
@@ -288,8 +292,7 @@ Frontend shows which users succeeded/failed.
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| POST | `/api/form/partnership` | Partnership inquiry |
-| POST | `/api/form/invest-early` | Early investment inquiry |
+| POST | `/api/form/contact` | General contact form (replaced partnership + invest-early) |
 
 ### Rules:
 - No generic catch-all (`/api/data/[path]`) for sensitive operations.
@@ -373,20 +376,23 @@ Frontend shows which users succeeded/failed.
 | `src/lib/site-config.ts` | 1 | Brand constants + default values for Layer 2 |
 | `src/app/page.tsx` | 1+2 | Homepage UI (1) with public config fetch (2) |
 | `src/app/checknfts/page.tsx` | 1+2 | Near-duplicate of page.tsx — to be merged |
-| `src/app/campaign/page.tsx` | 1+2 | Campaign UI + config fetch |
-| `src/app/partnership/page.tsx` | 1 | Static form, submits via `/api/form/partnership` |
-| `src/app/invest-early/page.tsx` | 1 | Static form, submits via `/api/form/invest-early` |
+| `src/app/campaign/page.tsx` | 1+2 | Campaign UI + config fetch, daily reward card, frontend-only per-task UX + batch final-submit |
+| `src/app/contact/page.tsx` | 1 | Contact form, submits via `/api/form/contact` |
 | `src/app/connectadmin/` | 3 | Admin panel (authenticated) |
-| `src/app/api/config/public/route.ts` | 2 | Public config endpoint (NEW — to split from catch-all) |
-| `src/app/api/user/register/route.ts` | 3 | User registration (NEW) |
-| `src/app/api/campaign/complete-task/route.ts` | 3 | Task completion (NEW) |
-| `src/app/api/admin/login/route.ts` | 3 | Admin auth (exists) |
-| `src/app/api/admin/config/update/route.ts` | 3 | Config save (NEW) |
-| `src/app/api/admin/campaign/save/route.ts` | 3 | Campaign save (NEW) |
-| `src/app/api/admin/users/verify/route.ts` | 3 | User verify (NEW) |
-| `src/app/api/data/[path]/route.ts` | — | TO BE DEPRECATED — replace with dedicated endpoints |
+| `src/app/api/config/public/route.ts` | 2 | Public config endpoint (rate limited: 120/min) |
+| `src/app/api/leaderboard/route.ts` | 3 | Sanitized leaderboard — rank, username, value only (rate limited: 60/min) |
+| `src/app/api/user/register/route.ts` | 3 | User registration (rate limited: 5/min) |
+| `src/app/api/user/lookup/route.ts` | 3 | Single-user lookup (rate limited: 60/min) |
+| `src/app/api/campaign/complete-task/route.ts` | 3 | Task completion (rate limited: 10/min) |
+| `src/app/api/campaign/final-submit/route.ts` | 3 | Batch task completion (rate limited: 10/min) |
+| `src/app/api/campaign/claim-daily-reward/route.ts` | 3 | Daily reward claim (rate limited: 5/min) |
+| `src/app/api/admin/login/route.ts` | 3 | Admin auth (rate limited: 5/min) |
+| `src/app/api/admin/config/update/route.ts` | 3 | Config save |
+| `src/app/api/admin/campaign/save/route.ts` | 3 | Campaign save |
+| `src/app/api/admin/users/verify/route.ts` | 3 | User verify |
+| `src/app/api/data/[path]/route.ts` | — | Locked to 410 Gone — replaced by dedicated endpoints |
 | `src/lib/db.ts` | 3 | SQLite layer |
-| `src/lib/api.ts` | 1+2 | HTTP client — to be split into public + admin clients |
+| `src/lib/api.ts` | 1+2 | HTTP client |
 | `src/lib/nft-config.ts` | 1 | NFT constants — to be merged into site-config.ts |
 | `src/components/Task.tsx` | 1 | Task card UI component |
 | `src/components/Step.tsx` | 1 | Step wrapper component |

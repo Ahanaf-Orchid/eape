@@ -9,6 +9,7 @@ export default function ContactPage() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [hp, setHp] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
@@ -22,7 +23,7 @@ export default function ContactPage() {
     setSubmitting(true);
     setError("");
     try {
-      await formApi.contact({ name, email, subject, message });
+      await formApi.contact({ name, email, subject, message, _hp: hp });
       setSubmitted(true);
     } catch {
       setError("Failed to send. Please try again.");
@@ -71,6 +72,10 @@ export default function ContactPage() {
             <textarea style={{ ...styles.input, minHeight: 120, resize: "vertical" }} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Your message..." maxLength={2000} />
           </div>
           {error && <p style={styles.err}>{error}</p>}
+          <div style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, overflow: "hidden" }} aria-hidden="true">
+            <label>Leave this empty</label>
+            <input type="text" name="_hp" value={hp} onChange={(e) => setHp(e.target.value)} tabIndex={-1} autoComplete="off" />
+          </div>
           <button type="submit" style={{ ...styles.btn, ...styles.submitBtn }} disabled={submitting}>
             {submitting ? "SENDING..." : "SEND"}
           </button>

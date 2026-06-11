@@ -95,6 +95,16 @@ function createTables(db: Database.Database) {
       message TEXT,
       submittedAt INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS daily_claims (
+      userId TEXT NOT NULL,
+      rewardDate TEXT NOT NULL,
+      rewardType TEXT NOT NULL,
+      username TEXT NOT NULL,
+      rewardMxp INTEGER NOT NULL,
+      claimedAt INTEGER NOT NULL,
+      UNIQUE(userId, rewardDate, rewardType)
+    );
   `);
 }
 
@@ -211,18 +221,17 @@ export function deviceLoginsGetAll(): Record<string, { count: number; lastLogin:
   return result;
 }
 
-export function partnershipSubmit(data: { twitter: string; email: string; telegram: string; message: string }): string {
+export function dailyClaimCheck(userId: string, rewardDate: string, rewardType: string): { rewardMxp: number; claimedAt: number } | null {
   const db = getDb();
-  const id = generateId();
-  db.prepare("INSERT INTO partnerships (id, twitter, email, telegram, message, submittedAt) VALUES (?, ?, ?, ?, ?, ?)")
-    .run(id, data.twitter, data.email, data.telegram, data.message, Date.now());
-  return id;
+  const row = db.prepare(
+    "SELECT rewardMxp, claimedAt FROM daily_claims WHERE userId = ? AND rewardDate = ? AND rewardType = ?"
+  ).get(userId, rewardDate, rewardType) as { rewardMxp: number; claimedAt: number } | undefined;
+  return row || null;
 }
 
-export function investEarlySubmit(data: { twitter: string; email: string; amount: string; message: string }): string {
+export function dailyClaimCreate(userId: string, username: string, rewardType: string, rewardDate: string, rewardMxp: number, claimedAt: number): void {
   const db = getDb();
-  const id = generateId();
-  db.prepare("INSERT INTO invest_early (id, twitter, email, amount, message, submittedAt) VALUES (?, ?, ?, ?, ?, ?)")
-    .run(id, data.twitter, data.email, data.amount, data.message, Date.now());
-  return id;
+  db.prepare(
+    "INSERT INTO daily_claims (userId, username, rewardType, rewardDate, rewardMxp, claimedAt) VALUES (?, ?, ?, ?, ?, ?)"
+  ).run(userId, username, rewardType, rewardDate, rewardMxp, claimedAt);
 }

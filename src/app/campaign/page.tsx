@@ -33,7 +33,6 @@ export default function CampaignPage() {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
   const [config, setConfig] = useState<CampaignConfig>(DEFAULT_CONFIG);
-  const [pageAvailable, setPageAvailable] = useState(true);
   const [tasks, setTasks] = useState<CampaignTask[]>([]);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [campaignInputs, setCampaignInputs] = useState<Record<string, string>>({});
@@ -46,6 +45,13 @@ export default function CampaignPage() {
   const [rewardMessage, setRewardMessage] = useState("");
   const [visitedLinkTasks, setVisitedLinkTasks] = useState<string[]>([]);
   const [mxpBreakdown, setMxpBreakdown] = useState({ fromUsername: 0, fromInvitee: 0, fromReferrals: 0, fromTasks: 0 });
+  const [dailyRewardEnabled, setDailyRewardEnabled] = useState(true);
+  const [dailyRewardMxp, setDailyRewardMxp] = useState(20);
+  const [dailyClaimed, setDailyClaimed] = useState(false);
+  const [dailyClaiming, setDailyClaiming] = useState(false);
+  const [dailyMessage, setDailyMessage] = useState("");
+  const [pendingTasks, setPendingTasks] = useState<string[]>([]);
+  const [finalSubmitting, setFinalSubmitting] = useState(false);
 
   const getLocalStorageKey = (user: string, version: number) => {
     return `${SITE.shortName.toLowerCase()}_campaign_completed_${user.replace(/^@/, "")}_v${version}`;
@@ -78,14 +84,15 @@ export default function CampaignPage() {
           });
         }
         setTasks(tasksArray);
-      }
 
-      const pageData = result.pageRuntime as Record<string, unknown> | null;
-      const campaignRuntime = pageData?.campaign as Record<string, unknown> | null;
-      if (campaignRuntime) {
-        setPageAvailable(campaignRuntime.enabled !== false);
-      } else {
-        setPageAvailable(!!data?.enabled);
+        setDailyRewardEnabled(data.dailyRewardEnabled !== false);
+        setDailyRewardMxp((data.dailyRewardMxp as number) || 20);
+
+        const todayDate = new Date().toISOString().split("T")[0];
+        const lastClaimKey = `eape_daily_claim_${todayDate}`;
+        if (localStorage.getItem(lastClaimKey) === todayDate) {
+          setDailyClaimed(true);
+        }
       }
     } catch (error) {
       console.error("Load config error:", error);
@@ -119,6 +126,7 @@ export default function CampaignPage() {
 
         setIsIdentified(true);
         setShowIdModal(false);
+        setPendingTasks([]);
         return true;
       }
       return false;
@@ -198,6 +206,7 @@ export default function CampaignPage() {
 
         setIsIdentified(true);
         setShowIdModal(false);
+        setPendingTasks([]);
         setLoading(false);
         return;
       }
@@ -212,69 +221,47 @@ export default function CampaignPage() {
     }
   };
 
-  const handleTaskClick = async (task: CampaignTask) => {
-    if (task.inputType && task.inputType !== "click") {
-      return;
+  const handleClaimDailyReward = async () => {
+    if (!username || dailyClaimed) return;
+    setDailyClaiming(true);
+    setDailyMessage("");
+    try {
+      const result = await userApi.claimDailyReward(username);
+      if (result.success) {
+        setDailyClaimed(true);
+        setUserPoints(result.totalMxp || (userPoints + dailyRewardMxp));
+        const todayDate = new Date().toISOString().split("T")[0];
+        localStorage.setItem(`eape_daily_claim_${todayDate}`, todayDate);
+        setDailyMessage(`+${result.rewardMxp} MXP claimed!`);
+        setTimeout(() => setDailyMessage(""), 3000);
+      } else if (result.alreadyClaimed) {
+        setDailyClaimed(true);
+        setDailyMessage("Already claimed today");
+      } else {
+        setDailyMessage(result.message || "Claim failed. Try again.");
+      }
+    } catch (error) {
+      console.error("Daily reward claim error:", error);
+      setDailyMessage("Error claiming reward. Try again.");
     }
+    setDailyClaiming(false);
+  };
+
+  const handleTaskClick = (task: CampaignTask) => {
+    if (task.inputType && task.inputType !== "click") return;
 
     if (task.url) {
       window.open(task.url, "_blank");
     }
 
-    await completeTask(task, "");
-  };
-
-  const completeTask = async (task: CampaignTask, userInput: string) => {
-    if (!username) return;
-
-    setRewardMessage("");
-
-    try {
-      // Look up the userId first
-      const lookup = await userApi.lookup(username);
-      if (!lookup?.found || !lookup.userId) {
-        setRewardMessage("User not found. Please re-identify.");
-        return;
-      }
-
-      const currentCampaignVersion = lookup.campaignVersion || 1;
-      const dbCompleted: string[] = lookup.campaignCompletedTasks || [];
-
-      if (currentCampaignVersion !== config.version) {
-        setRewardMessage("Campaign updated! Starting fresh.");
-      } else if (dbCompleted.includes(task.id)) {
-        setRewardMessage("Task already completed!");
-        return;
-      }
-
-      // Use the dedicated backend endpoint — actually saves to DB
-      const result = await userApi.completeTask(lookup.userId, task.id, userInput || undefined);
-
-      if (result.success) {
-        const updated = result.user;
-        setUserPoints(updated.mxp || 0);
-
-        const newCompleted = updated.campaignCompletedTasks || dbCompleted;
-        setCompletedTasks(newCompleted);
-        saveLocalCompletion(username, config.version, newCompleted);
-        setCampaignInputs(updated.campaignInputs || {});
-
-        if (currentCampaignVersion !== config.version) {
-          setRewardMessage(`+${task.points} ${SITE.xpLabel} earned! (New campaign)`);
-        } else {
-          setRewardMessage(`+${task.points} ${SITE.xpLabel} earned!`);
-        }
-        setTimeout(() => setRewardMessage(""), 3000);
-      } else {
-        setRewardMessage(result.message || "Error completing task. Please try again.");
-      }
-    } catch (error) {
-      console.error("Task completion error:", error);
-      setRewardMessage("Error completing task. Please try again.");
+    // Frontend-only: mark as ready, no backend call
+    if (!pendingTasks.includes(task.id)) {
+      setPendingTasks(prev => [...prev, task.id]);
     }
+    setRewardMessage("");
   };
 
-  const handlePasteSubmit = async (task: CampaignTask) => {
+  const handlePasteSubmit = (task: CampaignTask) => {
     const userInput = campaignInputs[task.id] || "";
 
     if (!userInput.trim()) {
@@ -286,7 +273,54 @@ export default function CampaignPage() {
       window.open(task.url, "_blank");
     }
 
-    await completeTask(task, userInput);
+    // Frontend-only: mark as ready, no backend call
+    if (!pendingTasks.includes(task.id)) {
+      setPendingTasks(prev => [...prev, task.id]);
+    }
+    setRewardMessage("");
+  };
+
+  const handleFinalSubmit = async () => {
+    if (!username || pendingTasks.length === 0) return;
+
+    setFinalSubmitting(true);
+    setRewardMessage("");
+
+    try {
+      const tasksToSubmit = pendingTasks.map(taskId => ({
+        taskId,
+        proofValue: campaignInputs[taskId] || undefined,
+      }));
+
+      const result = await userApi.finalSubmit(username, tasksToSubmit);
+
+      if (result.success) {
+        const user = result.user;
+        setUserPoints(user.mxp || 0);
+        setCompletedTasks(result.completedTasks || []);
+        saveLocalCompletion(username, config.version, result.completedTasks || []);
+        setCampaignInputs(user.campaignInputs || {});
+        setPendingTasks([]);
+
+        const taskPoints = pendingTasks.reduce((sum, id) => {
+          const t = tasks.find(t => t.id === id);
+          return sum + (t?.points || 0);
+        }, 0);
+        setRewardMessage(`+${taskPoints} MXP earned!`);
+        setTimeout(() => setRewardMessage(""), 3000);
+      } else if (result.failedTasks) {
+        const msgs = result.failedTasks.map((f: { taskId: string; message: string }) =>
+          f.message
+        ).join("; ");
+        setRewardMessage(msgs || result.message || "Some tasks failed validation");
+      } else {
+        setRewardMessage(result.message || "Submission failed. Try again.");
+      }
+    } catch (error) {
+      console.error("Final submit error:", error);
+      setRewardMessage("Error submitting tasks. Try again.");
+    }
+    setFinalSubmitting(false);
   };
 
   const getTotalPoints = () => {
@@ -300,38 +334,6 @@ export default function CampaignPage() {
   };
 
   if (!isClient) return null;
-
-  if (!pageAvailable) {
-    return (
-      <div className="campaign-container">
-        <div className="campaign-header">
-          <button className="back-btn" onClick={() => router.push("/")}>
-            ← BACK
-          </button>
-          <img src="/logo.PNG" alt="Logo" className="campaign-logo" />
-        </div>
-        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <h2 style={{ color: '#9E1B1E', fontFamily: 'Anton, sans-serif', fontSize: '24px' }}>PAGE UNAVAILABLE</h2>
-          <p style={{ color: '#705B4E', marginTop: '16px' }}>This page is currently disabled.</p>
-          <button 
-            className="btn primary-btn" 
-            style={{ marginTop: '24px' }}
-            onClick={() => router.push("/")}
-          >
-            GO TO HOMEPAGE
-          </button>
-        </div>
-        <style>{`
-          .campaign-container { max-width: 520px; margin: 0 auto; padding: 20px; background: #FAFAFA; min-height: 100vh; }
-          .campaign-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-          .back-btn { background: #EED5C1; border: 3px solid #1E1E1E; padding: 10px 16px; font-weight: 700; cursor: pointer; border-radius: 8px; }
-          .campaign-logo { height: 40px; }
-          .btn { padding: 14px 28px; border: 3px solid #1E1E1E; font-weight: 700; cursor: pointer; border-radius: 10px; }
-          .primary-btn { background: #9E1B1E; color: #FAFAFA; }
-        `}</style>
-      </div>
-    );
-  }
 
   return (
     <div className="campaign-container">
@@ -358,6 +360,38 @@ export default function CampaignPage() {
 
       {rewardMessage && (
         <div className="reward-message">{rewardMessage}</div>
+      )}
+
+      {dailyMessage && (
+        <div className="reward-message">{dailyMessage}</div>
+      )}
+
+      {isIdentified && (
+        <div className="daily-reward-card">
+          <div className="daily-reward-header">
+            <span className="daily-reward-icon">🎁</span>
+            <span className="daily-reward-title">DAILY REWARD</span>
+          </div>
+          {!dailyRewardEnabled ? (
+            <p className="daily-reward-disabled">Daily reward is currently disabled</p>
+          ) : dailyClaimed ? (
+            <div className="daily-reward-claimed">
+              <span className="claimed-check">✓</span>
+              <span>Claimed +{dailyRewardMxp} MXP today</span>
+            </div>
+          ) : (
+            <>
+              <p className="daily-reward-amount">Claim +{dailyRewardMxp} MXP once per day</p>
+              <button
+                className="btn primary-btn daily-claim-btn"
+                onClick={handleClaimDailyReward}
+                disabled={dailyClaiming}
+              >
+                {dailyClaiming ? "CLAIMING..." : `CLAIM +${dailyRewardMxp} MXP`}
+              </button>
+            </>
+          )}
+        </div>
       )}
 
       {!isIdentified ? (
@@ -396,6 +430,8 @@ export default function CampaignPage() {
                 className={`campaign-task ${
                   completedTasks.includes(task.id) ? "completed" : ""
                 } ${
+                  pendingTasks.includes(task.id) && !completedTasks.includes(task.id) ? "pending" : ""
+                } ${
                   task.inputType && task.inputType !== "click"
                     ? "paste-task"
                     : ""
@@ -420,21 +456,27 @@ export default function CampaignPage() {
                     <span>+{task.points} MXP</span>
                     <span
                       className={`task-check ${
-                        completedTasks.includes(task.id) ? "visible" : ""
+                        completedTasks.includes(task.id) || pendingTasks.includes(task.id) ? "visible" : ""
                       }`}
                     >
-                      ✓
+                      {completedTasks.includes(task.id) ? "✓" : "●"}
                     </span>
                   </div>
                 </div>
 
                 {task.inputType === "click" && !completedTasks.includes(task.id) && (
-                  <button
-                    className="campaign-link-btn"
-                    onClick={() => handleTaskClick(task)}
-                  >
-                    GO TO LINK →
-                  </button>
+                  <>
+                    {!pendingTasks.includes(task.id) ? (
+                      <button
+                        className="campaign-link-btn"
+                        onClick={() => handleTaskClick(task)}
+                      >
+                        GO TO LINK →
+                      </button>
+                    ) : (
+                      <div className="task-ready-indicator">✓ Ready to submit</div>
+                    )}
+                  </>
                 )}
 
                 {/* LINK type: show GO button first, then input appears after visiting */}
@@ -451,7 +493,7 @@ export default function CampaignPage() {
                     >
                       {visitedLinkTasks.includes(task.id) ? "↗ VISIT LINK AGAIN" : "↗ GO TO LINK →"}
                     </button>
-                    {visitedLinkTasks.includes(task.id) && (
+                    {visitedLinkTasks.includes(task.id) && !pendingTasks.includes(task.id) && (
                       <div className="task-input-row" style={{ marginTop: '10px' }}>
                         <input
                           type="text"
@@ -464,9 +506,12 @@ export default function CampaignPage() {
                           className="submit-btn"
                           onClick={() => handlePasteSubmit(task)}
                         >
-                          SUBMIT
+                          MARK READY
                         </button>
                       </div>
+                    )}
+                    {pendingTasks.includes(task.id) && (
+                      <div className="task-ready-indicator">✓ Ready to submit</div>
                     )}
                   </>
                 )}
@@ -475,7 +520,8 @@ export default function CampaignPage() {
                 {task.inputType &&
                   task.inputType !== "click" &&
                   task.inputType !== "link" &&
-                  !completedTasks.includes(task.id) && (
+                  !completedTasks.includes(task.id) &&
+                  !pendingTasks.includes(task.id) && (
                     <div className="task-input-row">
                       <input
                         type={task.inputType === "email" ? "email" : "text"}
@@ -494,9 +540,17 @@ export default function CampaignPage() {
                         className="submit-btn"
                         onClick={() => handlePasteSubmit(task)}
                       >
-                        SUBMIT
+                        MARK READY
                       </button>
                     </div>
+                  )}
+
+                {task.inputType &&
+                  task.inputType !== "click" &&
+                  task.inputType !== "link" &&
+                  !completedTasks.includes(task.id) &&
+                  pendingTasks.includes(task.id) && (
+                    <div className="task-ready-indicator">✓ Ready to submit</div>
                   )}
 
                 {task.inputType &&
@@ -512,6 +566,23 @@ export default function CampaignPage() {
               </div>
             ))}
           </div>
+
+          {pendingTasks.length > 0 && (
+            <div className="final-submit-section">
+              <button
+                className="btn primary-btn final-submit-btn"
+                onClick={handleFinalSubmit}
+                disabled={finalSubmitting}
+              >
+                {finalSubmitting
+                  ? "SUBMITTING..."
+                  : `COMPLETE TASKS → +${pendingTasks.reduce((sum, id) => sum + (tasks.find(t => t.id === id)?.points || 0), 0)} MXP`}
+              </button>
+              <p className="final-submit-hint">
+                {pendingTasks.length} task{pendingTasks.length > 1 ? "s" : ""} ready to submit
+              </p>
+            </div>
+          )}
 
           <div className="points-summary">
             <div className="points-row">
@@ -1075,6 +1146,86 @@ export default function CampaignPage() {
           .task-input-row {
             flex-direction: column;
           }
+        }
+
+        .daily-reward-card {
+          margin: 16px 0;
+          padding: 18px;
+          border: 3px solid var(--border-color);
+          border-radius: 12px;
+          background: linear-gradient(135deg, #FFF8F0 0%, #FFF3E0 100%);
+          text-align: center;
+        }
+        .daily-reward-header {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        .daily-reward-icon { font-size: 24px; }
+        .daily-reward-title {
+          font-family: 'Anton', sans-serif;
+          font-size: 18px;
+          color: var(--primary-color);
+          letter-spacing: 1px;
+        }
+        .daily-reward-amount {
+          font-size: 14px;
+          color: #705B4E;
+          margin-bottom: 12px;
+        }
+        .daily-claim-btn {
+          width: 100%;
+          max-width: 280px;
+          margin: 0 auto;
+        }
+        .daily-reward-claimed {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          font-size: 14px;
+          color: #28a745;
+          font-weight: 700;
+        }
+        .claimed-check { font-size: 16px; }
+        .daily-reward-disabled {
+          font-size: 14px;
+          color: #705B4E;
+          opacity: 0.7;
+        }
+
+        .campaign-task.pending {
+          border-color: #F28C28;
+          background: #FFF8F0;
+        }
+        .task-ready-indicator {
+          margin-top: 8px;
+          padding: 8px 12px;
+          background: #FFF3CD;
+          border: 2px solid #F28C28;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 700;
+          color: #856404;
+          text-align: center;
+        }
+        .final-submit-section {
+          margin: 20px 0;
+          text-align: center;
+        }
+        .final-submit-btn {
+          width: 100%;
+          max-width: 320px;
+          padding: 16px 28px;
+          font-size: 16px;
+        }
+        .final-submit-hint {
+          margin-top: 8px;
+          font-size: 12px;
+          color: #705B4E;
+          opacity: 0.7;
         }
       `}</style>
     </div>

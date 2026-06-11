@@ -35,6 +35,9 @@ export const publicApi = {
   getConfig() {
     return fetchJson("/api/config/public");
   },
+  leaderboard(tab: "referrers" | "holders" = "referrers") {
+    return fetchJson(`/api/leaderboard?tab=${tab}`);
+  },
 };
 
 export const userApi = {
@@ -65,21 +68,21 @@ export const userApi = {
       body: JSON.stringify({ userId, taskId, proof }),
     });
   },
+  claimDailyReward(username: string) {
+    return fetchJson("/api/campaign/claim-daily-reward", {
+      method: "POST",
+      body: JSON.stringify({ username }),
+    });
+  },
+  finalSubmit(username: string, tasks: { taskId: string; proofValue?: string }[]) {
+    return fetchJson("/api/campaign/final-submit", {
+      method: "POST",
+      body: JSON.stringify({ username, tasks }),
+    });
+  },
 };
 
 export const formApi = {
-  partnership(data: Record<string, string>) {
-    return fetchJson("/api/form/partnership", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-  investEarly(data: Record<string, string>) {
-    return fetchJson("/api/form/invest-early", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
   contact(data: Record<string, string>) {
     return fetchJson("/api/form/contact", {
       method: "POST",
@@ -179,13 +182,6 @@ export const api = {
     console.warn(`[DEPRECATED] api.transaction("/${path}") — migrate to dedicated endpoint`);
     return fetchJson(`/api/data/${path}/transaction`, {
       method: "POST",
-    });
-  },
-  submit(path: "partnerships" | "invest-early", data: Record<string, string>) {
-    console.warn(`[DEPRECATED] api.submit("${path}") — migrate to dedicated endpoint`);
-    return fetchJson(`/api/submit/${path}`, {
-      method: "POST",
-      body: JSON.stringify(data),
     });
   },
 };

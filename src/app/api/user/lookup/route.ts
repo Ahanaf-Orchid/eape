@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { claimGet, userGet } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
+  const limit = checkRateLimit(req, "user-lookup", 60, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    );
+  }
+
   const url = new URL(req.url);
   const username = url.searchParams.get("username") || "";
 

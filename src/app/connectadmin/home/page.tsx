@@ -17,7 +17,6 @@ interface HomepageData {
   balanceLabelXp?: string;
   statusNames?: Record<string, string>;
   statusLevels?: Record<string, number>;
-  pageAvailability?: Record<string, boolean>;
   homeButtons?: Record<string, HomeButton>;
   // Backend
   walletConnect?: { solana: boolean; evm: boolean };
@@ -59,7 +58,6 @@ const DEFAULT_HOMEPAGE: HomepageData = {
   balanceLabelXp: SITE.xpLabel,
   statusNames: { ...STATUS_NAMES },
   statusLevels: { ...STATUS_LEVELS },
-  pageAvailability: { campaign: true },
   homeButtons: Object.fromEntries(BUTTON_KEYS.map((k) => [k, defaultButton(k)])),
   walletConnect: { solana: false, evm: true },
   taskNames: { ...TASK_NAMES },
@@ -194,17 +192,6 @@ export default function AdminHomePage() {
                   </div>
                 </Section>
               ))}
-            </Section>
-
-            <Section open={isOpen("pages")} onToggle={() => toggle("pages")} title="PAGE AVAILABILITY">
-              <div style={styles.formGroup}>
-                <label style={styles.label}>CAMPAIGN PAGE</label>
-                <Toggle
-                  value={data.pageAvailability?.campaign !== false}
-                  onChange={(v) => setData({ ...data, pageAvailability: { ...data.pageAvailability, campaign: v } })}
-                  labels={["AVAILABLE", "UNAVAILABLE"]}
-                />
-              </div>
             </Section>
 
             <Section open={isOpen("buttons")} onToggle={() => toggle("buttons")} title="BUTTON EDITOR">
@@ -438,7 +425,6 @@ function frontendFields(d: HomepageData): Partial<HomepageData> {
     balanceLabelXp: d.balanceLabelXp,
     statusNames: d.statusNames,
     statusLevels: d.statusLevels,
-    pageAvailability: d.pageAvailability,
     homeButtons: d.homeButtons,
   };
 }
