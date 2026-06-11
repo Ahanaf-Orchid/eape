@@ -37,7 +37,7 @@ interface HomeButton {
 const TASK_KEYS = ["task1", "task2", "task3", "task4", "task5", "telegram"] as const;
 const STATUS_KEYS = ["vip", "shark", "whale", "boss"] as const;
 const BUTTON_KEYS = ["home_join", "home_check", "campaign", "home_copyLink", "home_done", "home_continue"] as const;
-const PAGE_OPTIONS = ["/campaign", "/checknfts", "/invest-early", "/contact"];
+const PAGE_OPTIONS = ["/campaign", "/checknfts", "/contact"];
 
 function defaultButton(k: string): HomeButton {
   const labels: Record<string, string> = {

@@ -1313,7 +1313,7 @@ export default function Home() {
                         <span className="balance-label">{balanceLabelMichy}</span>
                         <div className="balance-value">
                           <img src={images.balanceIcons[1] || "/logo.PNG"} alt={SITE.projectName} className="balance-icon" />
-                          <span>0</span>
+                          <span>{userMxp.toLocaleString()}</span>
                         </div>
                       </div>
                       <div className="balance-box">
@@ -1331,12 +1331,12 @@ export default function Home() {
                     ⇄ Switch
                   </button>
                   <button
-                    className="btn secondary-btn"
+                    className="btn refresh-btn"
                     onClick={handleRefresh}
                     disabled={refreshCooldown}
-                    style={{ flex: "0 0 auto", minWidth: 70 }}
+                    style={{ flex: "0 0 auto", minWidth: 70, fontSize: 22 }}
                   >
-                    {refreshing ? "..." : refreshCooldown ? "⏳" : "🔄"}
+                    {refreshing ? "..." : refreshCooldown ? "⏳" : "⟳"}
                   </button>
                   {walletButtonVisible && (
                   <button
@@ -1376,13 +1376,23 @@ export default function Home() {
               </div>
 
               <div className="action-buttons homepage-actions">
+                  <button className="btn primary-btn" onClick={() => goToStep("join")}>
+                    {buttonLabels.home_join}
+                  </button>
+
+                  <div className="action-row">
+                    <button className="btn status-btn" onClick={() => setStatusModalOpen(true)}>
+                      {buttonLabels.home_check || "STATUS"}
+                    </button>
+                    <button className="btn leaderboard-btn" onClick={() => { setLeaderboardOpen(true); loadLeaderboardData('referrers'); }}>
+                      🏆 LEADERBOARD
+                    </button>
+                  </div>
+
                   {[
-                    { label: buttonLabels.home_join, action: () => goToStep("join"), show: true },
-                    { label: buttonLabels.home_check, action: () => setStatusModalOpen(true), show: true },
                     { label: campaign.buttonLabel, action: () => window.location.href = '/campaign', show: campaign.enabled },
                     { label: "Check NFTs", action: () => router.push('/checknfts'), show: true },
-                    { label: "🏆 LEADERBOARD", action: () => { setLeaderboardOpen(true); loadLeaderboardData('referrers'); }, show: true },
-                    { label: "GET INVOLVED", action: () => window.location.href = '/contact', show: true },
+                    { label: "CONTACT US", action: () => window.location.href = '/contact', show: true },
                   ].filter(b => b.show).map((btn, idx) => (
                     <button key={idx} className={`btn ${idx % 2 === 0 ? 'primary-btn' : 'secondary-btn'}`} onClick={btn.action}>
                       {btn.label}

@@ -1329,7 +1329,7 @@ export default function Home() {
                         <span className="balance-label">{balanceLabelMichy}</span>
                         <div className="balance-value">
                           <img src="/logo.PNG" alt={SITE.projectName} className="balance-icon" />
-                          <span>0</span>
+                          <span>{userMxp.toLocaleString()}</span>
                         </div>
                       </div>
                       <div className="balance-box">
@@ -1347,19 +1347,21 @@ export default function Home() {
                     ⇄ Switch
                   </button>
                   <button
-                    className="btn secondary-btn"
+                    className="btn refresh-btn"
                     onClick={handleRefresh}
                     disabled={refreshCooldown}
-                    style={{ flex: "0 0 auto", minWidth: 70 }}
+                    style={{ flex: "0 0 auto", minWidth: 70, fontSize: 22 }}
                   >
-                    {refreshing ? "..." : refreshCooldown ? "⏳" : "🔄"}
+                    {refreshing ? "..." : refreshCooldown ? "⏳" : "⟳"}
                   </button>
+                  {walletButtonVisible && (
                   <button
                     className={`btn ${walletConnected ? "secondary-btn wallet-connected-btn" : "primary-btn connect-btn"}`}
                     onClick={() => setWalletModalOpen(true)}
                   >
                     {walletConnected ? "✓ Connected" : "Connect"}
                   </button>
+                  )}
                 </div>
               </div>
 

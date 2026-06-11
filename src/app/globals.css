@@ -272,6 +272,38 @@ p {
   margin-top: 40px;
 }
 
+.action-row {
+  display: flex;
+  gap: 10px;
+}
+
+.action-row .btn {
+  flex: 1;
+}
+
+.refresh-btn {
+  background: #60A5FA;
+  color: #fff;
+  border-color: #3B82F6;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.leaderboard-btn {
+  background: #3B82F6;
+  color: #fff;
+  border-color: #2563EB;
+}
+
+.status-btn {
+  background: #FAFAFA;
+  color: #1E1E1E;
+  border-color: #1E1E1E;
+}
+
 /* Modal */
 .modal {
   position: fixed;
