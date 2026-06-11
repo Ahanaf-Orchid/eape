@@ -320,6 +320,33 @@ This file preserves historical decisions. For what is currently live, see the ar
 
 ---
 
+## Login Flow: `api.get("users")` → `userApi.lookup()`
+
+**Date:** 2026-06-11
+
+**Decision:** Replace the login flow's `api.get("users")` (downloads ALL users to browser, linear scan) with `userApi.lookup(username)` (single-user indexed lookup via `GET /api/user/lookup?username=`).
+
+**Reason:**
+- `api.get("users")` downloaded ENTIRE user database to every visitor's browser for login
+- Linear scan through all users was slow and insecure
+- Login was broken on VPS because `[DEPRECATED]` warnings masked the real issue
+- New approach: backend strips `@` and lowercases, does indexed lookup via `usernames` table
+- Works with `@orchid`, `orchid`, `Orchid`, `@ORCHID` — all normalized
+
+## Upload: Nginx Serves Uploaded Files
+
+**Date:** 2026-06-11
+
+**Decision:** Serve `/uploads/` files via nginx `location` block with `alias` to host filesystem, bypassing Next.js. Auto-delete old files on replace via `DELETE /api/admin/upload`.
+
+**Reason:**
+- Next.js in production mode doesn't serve files added to `public/` after build
+- Docker volume mounts `./public/uploads:/app/public/uploads` — files persist across rebuilds
+- Nginx `location /uploads/` serves files directly with 30-day cache
+- Old files auto-deleted when replacing images (upload or URL change)
+
+---
+
 ## xpLabel Rename: "EXP" → "MXP"
 
 **Date:** 2026-06-10

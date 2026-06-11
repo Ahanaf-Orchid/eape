@@ -45,7 +45,20 @@
 - [x] Rename `xpLabel: "EXP"` → `xpLabel: "MXP"` — unified naming
 - [x] GitHub repo created + pushed (`Ahanaf-Orchid/eape`)
 
-## Pending
+- [x] Login flow replaced: `api.get("users")` → `userApi.lookup()` — no more downloading all users
+- [x] Upload volume mount + auto-delete old files on replace
+- [x] Deployed to Hostinger KVM 4 — Docker + nginx + SSL — https://ethereumapes.com
+
+## Pending — Phase 15
+
+- [ ] 15A: Replace remaining `api.get("users")` in page.tsx/checknfts (device submission, leaderboard, referral tracking)
+- [ ] 15B: Remove stale `.mint-*` CSS (~800 lines in globals.css)
+- [ ] 15C: Wire `walletConnect` Solana/EVM toggles to homepage wallet modal
+- [ ] 15D: Extract shared `useRegistration()` hook from page.tsx + checknfts (~2100 shared lines)
+- [ ] 15E: Config auto-refresh on tab focus (version check, no polling)
+- [ ] Persist admin sessions to SQLite (survives server restart)
+- [ ] Populate `public/shared/` with SVG files (alternative: image manager handles this)
+- [ ] Post-deploy monitoring setup (UptimeRobot)
 
 - [ ] gxp legacy cleanup (16 references in 4 files — `|| user.gxp || 0` fallbacks)
 - [ ] Remove stale `.mint-*` CSS (~800 lines in globals.css)

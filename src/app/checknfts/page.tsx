@@ -328,28 +328,19 @@ export default function Home() {
 
   const loadUserFullData = async (username: string) => {
     try {
-      const users = await api.get("users");
-      
-      if (users !== null) {
-        const normalizedUsername = username.toLowerCase();
-        
-        for (const key in users) {
-          if (users[key].username?.toLowerCase() === normalizedUsername) {
-            const userData = users[key];
-            setSuccessData((prev) => prev ? {
-              ...prev,
-              mxp: userData.mxp || prev.mxp || 0,
-              mxpFromUsername: userData.mxpFromUsername || 0,
-              mxpFromInvitee: userData.mxpFromInvitee || 0,
-              mxpFromReferrals: userData.mxpFromReferrals || 0,
-              mxpFromTasks: userData.mxpFromTasks || 0,
-              reviewStatus: normalizeReviewStatus(userData.reviewStatus),
-              referrals: userData.referrals || prev?.referrals || 0,
-              status: userData.status || prev?.status || statusNames.default,
-            } : null);
-            break;
-          }
-        }
+      const lookup = await userApi.lookup(username);
+      if (lookup?.found) {
+        setSuccessData((prev) => prev ? {
+          ...prev,
+          mxp: lookup.mxp || prev.mxp || 0,
+          mxpFromUsername: lookup.mxpFromUsername || 0,
+          mxpFromInvitee: lookup.mxpFromInvitee || 0,
+          mxpFromReferrals: lookup.mxpFromReferrals || 0,
+          mxpFromTasks: lookup.mxpFromTasks || 0,
+          reviewStatus: normalizeReviewStatus(lookup.reviewStatus, lookup.verificationStatus),
+          referrals: lookup.referrals || prev?.referrals || 0,
+          status: lookup.status || prev?.status || statusNames.default,
+        } : null);
       }
     } catch (error) {
       console.error("Load user full data error:", error);
