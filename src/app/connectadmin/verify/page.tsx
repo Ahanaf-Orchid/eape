@@ -14,7 +14,6 @@ interface User {
   status?: string;
   referrals?: number;
   invitee?: string;
-  gxp?: number;
   mxp?: number;
   reviewStatus?: string;
   reviewNotes?: string;
@@ -177,7 +176,7 @@ export default function VerifyPage() {
     }
     switch (sortBy) {
       case 'newest': filtered.sort((a, b) => normalizeTimestamp(b.timestamp).localeCompare(normalizeTimestamp(a.timestamp))); break;
-      case 'mxp': filtered.sort((a, b) => (b.mxp || b.gxp || 0) - (a.mxp || a.gxp || 0)); break;
+      case 'mxp': filtered.sort((a, b) => (b.mxp || 0) - (a.mxp || 0)); break;
       case 'referrals': filtered.sort((a, b) => (b.referrals || 0) - (a.referrals || 0)); break;
     }
     setFilteredUsers(filtered);
@@ -265,7 +264,7 @@ export default function VerifyPage() {
 
   const exportVerifiedUsers = () => {
     const verified = users.filter(u => mapReviewStatus(u.reviewStatus) === 'verified');
-    const csv = [['#', 'Username', 'Wallet', 'SOL Wallet', 'Telegram', 'MXP', 'Referrals', 'Invitee', 'Verified At'].join(','), ...verified.map((u, i) => [i + 1, u.username || '', u.wallet || '', u.sol_wallet || '', u.telegram || '', u.mxp || u.gxp || 0, u.referrals || 0, u.invitee || '', u.reviewedAt ? String(u.reviewedAt).split('T')[0] : ''].join(','))].join('\n');
+    const csv = [['#', 'Username', 'Wallet', 'SOL Wallet', 'Telegram', 'MXP', 'Referrals', 'Invitee', 'Verified At'].join(','), ...verified.map((u, i) => [i + 1, u.username || '', u.wallet || '', u.sol_wallet || '', u.telegram || '', u.mxp || 0, u.referrals || 0, u.invitee || '', u.reviewedAt ? String(u.reviewedAt).split('T')[0] : ''].join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `verified_users_${new Date().toISOString().split('T')[0]}.csv`; a.click();
   };
@@ -335,7 +334,7 @@ export default function VerifyPage() {
                   const invUsers = users.filter(u => normalizeInviter(u.invitee) === normalizeInviter(inv.username));
                   const filteredInvUsers = invUsers.filter(u => reviewFilter === 'all' || mapReviewStatus(u.reviewStatus) === reviewFilter).sort((a, b) => {
                     if (sortBy === 'newest') return normalizeTimestamp(b.timestamp).localeCompare(normalizeTimestamp(a.timestamp));
-                    if (sortBy === 'mxp') return (b.mxp || b.gxp || 0) - (a.mxp || a.gxp || 0);
+                    if (sortBy === 'mxp') return (b.mxp || 0) - (a.mxp || 0);
                     if (sortBy === 'referrals') return (b.referrals || 0) - (a.referrals || 0);
                     return 0;
                   });
@@ -427,7 +426,7 @@ export default function VerifyPage() {
                 </div>
                 <div style={userCardBody}>
                   <div style={userStat}><span style={userStatLabel}>Referrals</span><span style={userStatValue}>{user.referrals || 0}</span></div>
-                  <div style={userStat}><span style={userStatLabel}>MXP</span><span style={userStatValue}>{user.mxp || user.gxp || 0}</span></div>
+                  <div style={userStat}><span style={userStatLabel}>MXP</span><span style={userStatValue}>{user.mxp || 0}</span></div>
                 </div>
                 {selectedChecks.length > 0 && (
                   <div style={checksRow}>
@@ -470,7 +469,7 @@ export default function VerifyPage() {
               <div style={detailRow}><span style={detailLabel}>Status</span><span style={{...getStatusBadge(selectedUser.reviewStatus), ...reviewBadge}}>{getStatusBadge(selectedUser.reviewStatus).text}</span></div>
               <div style={detailRow}><span style={detailLabel}>Invited By</span><span style={detailValue}>{selectedUser.invitee || 'None'}</span></div>
               <div style={detailRow}><span style={detailLabel}>Referrals</span><span style={detailValue}>{selectedUser.referrals || 0}</span></div>
-              <div style={detailRow}><span style={detailLabel}>MXP</span><span style={detailValue}>{selectedUser.mxp || selectedUser.gxp || 0}</span></div>
+              <div style={detailRow}><span style={detailLabel}>MXP</span><span style={detailValue}>{selectedUser.mxp || 0}</span></div>
               <div style={detailSection}><span style={detailLabel}>Wallet</span><span style={detailValueSmall}>{selectedUser.wallet || 'Not provided'}</span></div>
               <div style={detailSection}><span style={detailLabel}>SOL Wallet</span><span style={detailValueSmall}>{selectedUser.sol_wallet || 'Not provided'}</span></div>
               <div style={detailSection}><span style={detailLabel}>Telegram</span><span style={detailValueSmall}>{selectedUser.telegram || 'Not provided'}</span></div>

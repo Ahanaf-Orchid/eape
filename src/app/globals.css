@@ -3849,23 +3849,6 @@ p {
   margin: 0;
 }
 
-.mint-wrapper {
-  transition: opacity 0.4s ease, max-height 0.5s ease;
-  overflow: hidden;
-}
-
-.mint-wrapper.collapsed {
-  opacity: 0;
-  max-height: 0;
-  pointer-events: none;
-}
-
-.mint-wrapper.expanded {
-  opacity: 1;
-  max-height: 2000px;
-}
-
-
 /* Mint page sale phase cards */
 .sale-phase-card {
   position: relative;

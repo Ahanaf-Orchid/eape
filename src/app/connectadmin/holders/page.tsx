@@ -16,7 +16,6 @@ interface User {
   referrals?: number;
   invitee?: string;
   mxp?: number;
-  gxp?: number;
   reviewStatus?: string;
   timestamp?: string;
   [key: string]: any;

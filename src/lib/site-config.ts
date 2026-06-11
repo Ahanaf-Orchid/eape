@@ -5,7 +5,7 @@ export const SITE = {
   projectName: "Ethereum Apes",
   shortName: "EAPE",
   pointsName: "MAGIC POINT",
-  xpLabel: "EXP",
+  xpLabel: "MXP",
   balanceLabel: "MAGIC POINT",
   tokenSymbol: "$EAPE",
   hashtag: "#EAPE $EAPE",

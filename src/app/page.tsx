@@ -1268,7 +1268,7 @@ export default function Home() {
     try {
       const users = await api.get("users");
       if (users !== null) {
-        const userArray: {id: string; username?: string; referrals?: number; mxp?: number; gxp?: number}[] = [];
+        const userArray: {id: string; username?: string; referrals?: number; mxp?: number}[] = [];
         
         Object.entries(users).forEach(([key, value]: [string, any]) => {
           if (value.username) {
@@ -1276,7 +1276,7 @@ export default function Home() {
               id: key,
               username: value.username,
               referrals: value.referrals || 0,
-              mxp: value.mxp || value.gxp || 0,
+              mxp: value.mxp || 0,
             });
           }
         });
