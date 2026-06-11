@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
     status: userData.status || "BOT",
     referrals: userData.referrals || 0,
     reviewStatus: userData.reviewStatus || userData.verificationStatus || "PENDING",
+    verificationStatus: userData.verificationStatus || "pending",
     campaignCompletedTasks: userData.campaignCompletedTasks || [],
     campaignInputs: userData.campaignInputs || {},
     campaignVersion: userData.campaignVersion || 1,

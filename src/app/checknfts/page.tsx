@@ -243,9 +243,8 @@ export default function Home() {
     return null;
   };
 
-  const normalizeReviewStatus = (status?: string): string => {
-    if (!status) return "PENDING";
-    const s = status.toUpperCase().trim();
+  const normalizeReviewStatus = (status?: string, vStatus?: string): string => {
+    const s = (status || vStatus || "").toUpperCase().trim();
     if (s === "APPROVED" || s === "VERIFIED") return "VERIFIED";
     if (s === "REJECTED" || s === "DISQUALIFIED") return "DISQUALIFIED";
     if (s === "NEEDS_IMPROVEMENT") return "NEEDS_IMPROVEMENT";
@@ -535,27 +534,15 @@ export default function Home() {
 
   const loadUserMxp = async (username: string) => {
     try {
-      const users = await api.get("users");
-      
-      if (users !== null) {
-        const normalizedUsername = username.toLowerCase();
-        
-        for (const key in users) {
-          if (users[key].username?.toLowerCase() === normalizedUsername) {
-            const mxp = users[key].mxp || 0;
-            const status = users[key].status || statusNames.default;
-            const referrals = users[key].referrals || 0;
-            const reviewStatus = normalizeReviewStatus(users[key].reviewStatus);
-            setUserMxp(mxp);
-            setUserStatus(status);
-            setUserReferrals(referrals);
-            setUserReviewStatus(reviewStatus);
-            break;
-          }
-        }
+      const lookup = await userApi.lookup(username);
+      if (lookup?.found) {
+        setUserMxp(lookup.mxp || 0);
+        setUserStatus(lookup.status || statusNames.default);
+        setUserReferrals(lookup.referrals || 0);
+        setUserReviewStatus(normalizeReviewStatus(lookup.reviewStatus));
       }
     } catch (error) {
-      console.error("Load user data error:", error);
+      console.error("Load user MXP error:", error);
     }
   };
 
@@ -761,17 +748,15 @@ export default function Home() {
 
     if (!forceRefresh && cachedUsers.has(normalized)) {
       try {
-        const freshData = await api.get(`users/${normalized}`);
-        if (freshData !== null) {
-          const normalizedFresh = normalizeReviewStatus(freshData.reviewStatus);
-          if (freshData.reviewStatus && normalizedFresh !== cachedUsers.get(normalized)?.reviewStatus) {
+        const lookup = await userApi.lookup(username);
+        if (lookup?.found) {
+          const normalizedFresh = normalizeReviewStatus(lookup.reviewStatus, lookup.verificationStatus);
+          if (normalizedFresh !== cachedUsers.get(normalized)?.reviewStatus) {
             const data: CachedUser = {
               ...cachedUsers.get(normalized)!,
               reviewStatus: normalizedFresh,
               fakeMxpBlocked: normalizedFresh === "NEEDS_IMPROVEMENT" || normalizedFresh === "DISQUALIFIED",
-              comment1: freshData.comment_1 || "",
-              comment2: freshData.comment_2 || "",
-              comment3: freshData.comment_3 || "",
+              mxp: lookup.mxp || 0,
             };
             setCachedUsers((prev) => new Map(prev.set(normalized, data)));
             return data;
@@ -782,31 +767,27 @@ export default function Home() {
     }
 
     try {
-      const users = await api.get("users");
+      const lookup = await userApi.lookup(username);
 
-      if (users !== null) {
-        for (const key in users) {
-          if (users[key].username?.toLowerCase() === normalized) {
-            const data: CachedUser = {
-              referrals: users[key].referrals || 0,
-              status: users[key].status || statusNames.default,
-              wallet: users[key].wallet || "",
-              comment1: users[key].comment_1 || "",
-              comment2: users[key].comment_2 || "",
-              comment3: users[key].comment_3 || "",
-              mxp: users[key].mxp || 0,
-              mxpFromUsername: users[key].mxpFromUsername || 0,
-              mxpFromInvitee: users[key].mxpFromInvitee || 0,
-              mxpFromReferrals: users[key].mxpFromReferrals || 0,
-              mxpFromTasks: users[key].mxpFromTasks || 0,
-              reviewStatus: normalizeReviewStatus(users[key].reviewStatus),
-              fakeMxpBlocked: normalizeReviewStatus(users[key].reviewStatus) === "NEEDS_IMPROVEMENT" || normalizeReviewStatus(users[key].reviewStatus) === "DISQUALIFIED",
-            };
+      if (lookup?.found) {
+        const data: CachedUser = {
+          referrals: lookup.referrals || 0,
+          status: lookup.status || statusNames.default,
+          wallet: lookup.wallet || "",
+          comment1: lookup.comment_1 || "",
+          comment2: lookup.comment_2 || "",
+          comment3: lookup.comment_3 || "",
+          mxp: lookup.mxp || 0,
+          mxpFromUsername: lookup.mxpFromUsername || 0,
+          mxpFromInvitee: lookup.mxpFromInvitee || 0,
+          mxpFromReferrals: lookup.mxpFromReferrals || 0,
+          mxpFromTasks: lookup.mxpFromTasks || 0,
+          reviewStatus: normalizeReviewStatus(lookup.reviewStatus, lookup.verificationStatus),
+          fakeMxpBlocked: normalizeReviewStatus(lookup.reviewStatus) === "NEEDS_IMPROVEMENT" || normalizeReviewStatus(lookup.reviewStatus) === "DISQUALIFIED",
+        };
 
-            setCachedUsers((prev) => new Map(prev.set(normalized, data)));
-            return data;
-          }
-        }
+        setCachedUsers((prev) => new Map(prev.set(normalized, data)));
+        return data;
       }
       return null;
     } catch (error) {
