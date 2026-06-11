@@ -42,6 +42,9 @@
 - [x] `invest-early` migrated from `api.submit()` to `formApi.investEarly()`
 - [x] Refresh button (🔄/⏳) on homepage + checknfts (30s cooldown)
 
+- [x] Rename `xpLabel: "EXP"` → `xpLabel: "MXP"` — unified naming
+- [x] GitHub repo created + pushed (`Ahanaf-Orchid/eape`)
+
 ## Pending
 
 - [ ] gxp legacy cleanup (16 references in 4 files — `|| user.gxp || 0` fallbacks)

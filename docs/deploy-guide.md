@@ -27,7 +27,7 @@ systemctl enable docker
 systemctl start docker
 
 # Clone repo
-git clone https://github.com/<org>/eape.git /opt/eape
+git clone https://github.com/Ahanaf-Orchid/eape.git /opt/eape
 cd /opt/eape
 
 # Create data directory for SQLite persistence
@@ -58,7 +58,7 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs
 
 # Clone and build
-git clone https://github.com/<org>/eape.git /opt/eape
+git clone https://github.com/Ahanaf-Orchid/eape.git /opt/eape
 cd /opt/eape
 npm ci --omit=dev
 npm run build

@@ -317,3 +317,28 @@ This file preserves historical decisions. For what is currently live, see the ar
 - 30s cooldown prevents abuse
 - Simpler than auto-refresh or WebSockets
 - Architecture explicitly avoids polling
+
+---
+
+## xpLabel Rename: "EXP" → "MXP"
+
+**Date:** 2026-06-10
+
+**Decision:** Rename `xpLabel` from `"EXP"` to `"MXP"` in `site-config.ts` to unify naming across the platform.
+
+**Reason:**
+- Tasks display `"+10 MXP"` but balance label showed `"EXP"` — two names for the same thing
+- `"MAGIC POINT"` is the full name, `"MXP"` is the short/ticker form
+- `gxp` was a third legacy name (now removed)
+- Single-line change in `site-config.ts` — all 22 references across 5 files auto-updated
+
+## gxp Legacy Cleanup
+
+**Date:** 2026-06-10
+
+**Decision:** Remove all `gxp` references and fallbacks (`|| x.gxp || 0`) from the codebase. Every read of user points now uses `mxp` only.
+
+**Reason:**
+- `gxp` was a legacy field name, never set by new code
+- 16 fallback references across 4 files added noise with zero benefit
+- `mxp` is the canonical database field for points
