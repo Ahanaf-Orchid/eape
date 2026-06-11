@@ -51,11 +51,12 @@
 
 ## Pending — Phase 15
 
-- [ ] 15A: Replace remaining `api.get("users")` in page.tsx/checknfts (device submission, leaderboard, referral tracking)
-- [ ] 15B: Remove stale `.mint-*` CSS (~800 lines in globals.css)
-- [ ] 15C: Wire `walletConnect` Solana/EVM toggles to homepage wallet modal
-- [ ] 15D: Extract shared `useRegistration()` hook from page.tsx + checknfts (~2100 shared lines)
+- [x] 15A: Replace remaining `api.get("users")` in page.tsx/checknfts (loadUserFullData + dead function removal, -325 lines)
+- [x] 15B: Remove stale `.mint-*` CSS (-755 lines in globals.css)
+- [x] 15C: WalletConnect already wired — `walletConnect.evm/solana` conditionals in wallet modal
+- [x] 15D: Real wallet connection (MetaMask + Phantom Web3 API popup) + admin toggle for Connect button visibility
 - [ ] 15E: Config auto-refresh on tab focus (version check, no polling)
+- [ ] Extract shared `useRegistration()` hook from page.tsx + checknfts (~2100 shared lines)
 - [ ] Persist admin sessions to SQLite (survives server restart)
 - [ ] Populate `public/shared/` with SVG files (alternative: image manager handles this)
 - [ ] Post-deploy monitoring setup (UptimeRobot)

@@ -347,6 +347,21 @@ This file preserves historical decisions. For what is currently live, see the ar
 
 ---
 
+## Phase 15D: Real Wallet Connection + Admin Toggle
+
+**Date:** 2026-06-11
+
+**Decision:** Implement real Web3 wallet connection (MetaMask + Phantom) replacing external link `<a href>` elements. Add admin toggle for Connect button visibility on homepage.
+
+**Reason:**
+- `<a href="https://metamask.io/download/">` just opened external download page — not real wallet connection
+- `window.ethereum.request({ method: 'eth_requestAccounts' })` opens MetaMask popup
+- `window.solana.connect()` opens Phantom popup
+- Falls back to download page if wallet not installed
+- Admin can hide Connect button via Frontend tab toggle (when OFF: only Switch + Refresh buttons shown)
+
+---
+
 ## xpLabel Rename: "EXP" → "MXP"
 
 **Date:** 2026-06-10

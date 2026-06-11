@@ -10,6 +10,7 @@ type Tab = "frontend" | "backend";
 
 interface HomepageData {
   // Frontend
+  walletButtonVisible?: boolean;
   showBalanceSection?: boolean;
   balanceLabelMichy?: string;
   balanceLabelSol?: string;
@@ -51,6 +52,7 @@ function defaultButton(k: string): HomeButton {
 }
 
 const DEFAULT_HOMEPAGE: HomepageData = {
+  walletButtonVisible: true,
   showBalanceSection: true,
   balanceLabelMichy: SITE.balanceLabel,
   balanceLabelSol: "SOL Balance",
@@ -304,6 +306,13 @@ export default function AdminHomePage() {
               ))}
             </Section>
 
+            <Section open={isOpen("walletBtn")} onToggle={() => toggle("walletBtn")} title="WALLET BUTTON VISIBILITY">
+              <div style={styles.formGroup}>
+                <label style={styles.label}>SHOW CONNECT BUTTON</label>
+                <Toggle value={!!data.walletButtonVisible} onChange={(v) => setData({ ...data, walletButtonVisible: v })} labels={["SHOWN", "HIDDEN"]} />
+              </div>
+            </Section>
+
             <div style={styles.actionBar}>
               <button style={styles.saveBtn} onClick={() => saveConfig(frontendFields(data))} disabled={saving}>
                 {saving ? "SAVING..." : "SAVE"}
@@ -422,6 +431,7 @@ export default function AdminHomePage() {
 
 function frontendFields(d: HomepageData): Partial<HomepageData> {
   return {
+    walletButtonVisible: d.walletButtonVisible,
     showBalanceSection: d.showBalanceSection,
     balanceLabelMichy: d.balanceLabelMichy,
     balanceLabelSol: d.balanceLabelSol,

@@ -184,6 +184,7 @@ export default function Home() {
   const [balanceLabelXp, setBalanceLabelXp] = useState<string>(SITE.xpLabel);
   const [startupOverlayVisible, setStartupOverlayVisible] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
+  const [walletButtonVisible, setWalletButtonVisible] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(0);
   const [refreshCooldown, setRefreshCooldown] = useState(false);
   const REFRESH_INTERVAL = 30_000;
@@ -203,6 +204,19 @@ export default function Home() {
     }
     setRefreshing(false);
   };
+
+  const connectMetaMask = async () => {
+    const eth = (window as any).ethereum;
+    if (eth) { try { const accounts = await eth.request({ method: 'eth_requestAccounts' }); setConnectedEthWallet(accounts[0]); setWalletConnected(true); setWalletModalOpen(false); } catch (e) {} }
+    else { window.open('https://metamask.io/download/', '_blank'); }
+  };
+
+  const connectPhantom = async () => {
+    const sol = (window as any).solana;
+    if (sol?.isPhantom) { try { const resp = await sol.connect(); setConnectedSolWallet(resp.publicKey.toString()); setWalletConnected(true); setWalletModalOpen(false); } catch (e) {} }
+    else { window.open('https://phantom.app/', '_blank'); }
+  };
+
   const [connectedEthWallet, setConnectedEthWallet] = useState("");
   const [connectedSolWallet, setConnectedSolWallet] = useState("");
 
@@ -458,6 +472,10 @@ export default function Home() {
         }
         if (data.balanceLabelXp) {
           setBalanceLabelXp(data.balanceLabelXp as string);
+        }
+
+        if (data.walletButtonVisible !== undefined) {
+          setWalletButtonVisible(!!data.walletButtonVisible);
         }
 
         if (data.homeButtons) {

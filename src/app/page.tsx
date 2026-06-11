@@ -164,6 +164,7 @@ export default function Home() {
   });
   const [bannerIndex, setBannerIndex] = useState(0);
   const [walletConnect, setWalletConnect] = useState({ solana: false, evm: true });
+  const [walletButtonVisible, setWalletButtonVisible] = useState(true);
   const [showBalanceSection, setShowBalanceSection] = useState(true);
   const [balanceLabelMichy, setBalanceLabelMichy] = useState<string>(SITE.pointsName);
   const [balanceLabelSol, setBalanceLabelSol] = useState<string>("SOL Balance");
@@ -189,6 +190,39 @@ export default function Home() {
     }
     setRefreshing(false);
   };
+
+  const connectMetaMask = async () => {
+    const eth = (window as any).ethereum;
+    if (eth) {
+      try {
+        const accounts = await eth.request({ method: 'eth_requestAccounts' });
+        setConnectedEthWallet(accounts[0]);
+        setWalletConnected(true);
+        setWalletModalOpen(false);
+      } catch (e) {
+        // User rejected or error
+      }
+    } else {
+      window.open('https://metamask.io/download/', '_blank');
+    }
+  };
+
+  const connectPhantom = async () => {
+    const sol = (window as any).solana;
+    if (sol?.isPhantom) {
+      try {
+        const resp = await sol.connect();
+        setConnectedSolWallet(resp.publicKey.toString());
+        setWalletConnected(true);
+        setWalletModalOpen(false);
+      } catch (e) {
+        // User rejected or error
+      }
+    } else {
+      window.open('https://phantom.app/', '_blank');
+    }
+  };
+
   const [connectedEthWallet, setConnectedEthWallet] = useState("");
   const [connectedSolWallet, setConnectedSolWallet] = useState("");
 
@@ -397,6 +431,9 @@ export default function Home() {
 
         if (data.walletConnect) {
           setWalletConnect(data.walletConnect as { solana: boolean; evm: boolean });
+        }
+        if (data.walletButtonVisible !== undefined) {
+          setWalletButtonVisible(!!data.walletButtonVisible);
         }
 
         const ctaVisibility = data.ctaVisibility as Record<string, unknown> | undefined;
@@ -1301,12 +1338,14 @@ export default function Home() {
                   >
                     {refreshing ? "..." : refreshCooldown ? "⏳" : "🔄"}
                   </button>
+                  {walletButtonVisible && (
                   <button
                     className={`btn ${walletConnected ? "secondary-btn wallet-connected-btn" : "primary-btn connect-btn"}`}
                     onClick={() => setWalletModalOpen(true)}
                   >
                     {walletConnected ? "✓ Connected" : "Connect"}
                   </button>
+                  )}
                 </div>
               </div>
 
@@ -2229,35 +2268,29 @@ export default function Home() {
                 <div style={{ textAlign: 'center', padding: '10px 0' }}>
                   <div style={{ fontSize: '40px', marginBottom: '12px' }}>⛓️</div>
                   <p style={{ fontSize: '14px', fontWeight: 800, marginBottom: '6px', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    LIVE — CONNECT WALLET
+                    LIVE - CONNECT WALLET
                   </p>
                   <p style={{ fontSize: '13px', color: 'var(--text-color)', opacity: 0.75, marginBottom: '18px' }}>
                     Connect your blockchain wallet to access Mint &amp; Buy features.
                   </p>
                   <div className="connect-wallet-options">
                     {walletConnect.evm && (
-                    <a
-                      href="https://metamask.io/download/"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
                       className="btn primary-btn connect-wallet-option-btn"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', textDecoration: 'none' }}
-                      onClick={() => setWalletModalOpen(false)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%' }}
+                      onClick={connectMetaMask}
                     >
                       <span>🦊</span> Connect MetaMask (EVM)
-                    </a>
+                    </button>
                     )}
                     {walletConnect.solana && (
-                    <a
-                      href="https://phantom.app/"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
                       className="btn secondary-btn connect-wallet-option-btn"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', textDecoration: 'none' }}
-                      onClick={() => setWalletModalOpen(false)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%' }}
+                      onClick={connectPhantom}
                     >
                       <span>👻</span> Connect Phantom (Solana)
-                    </a>
+                    </button>
                     )}
                   </div>
                   <button className="btn text-btn" style={{ marginTop: '8px' }} onClick={() => setWalletModalOpen(false)}>
