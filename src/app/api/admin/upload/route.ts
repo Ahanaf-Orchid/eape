@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
@@ -50,5 +50,26 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("Upload error:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const auth = requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+
+  try {
+    const body = await req.json();
+    const filePath = (body.path as string) || "";
+
+    if (!filePath || !filePath.startsWith("/uploads/")) {
+      return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    }
+
+    const fullPath = join(process.cwd(), "public", filePath.replace(/^\//, ""));
+    await unlink(fullPath).catch(() => {});
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Delete error:", err);
+    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
 }

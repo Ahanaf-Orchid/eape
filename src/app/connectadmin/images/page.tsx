@@ -255,8 +255,30 @@ function UploadCell({ src, label, onUpload, onRemove, canRemove, round, extra }:
       if (!res.ok) throw new Error("Upload failed");
       const json = await res.json();
       onUpload(json.path);
+      // Delete old file
+      if (src && src.startsWith("/uploads/")) {
+        fetch(UPLOAD_ENDPOINT, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ path: src }),
+        }).catch(() => {});
+      }
     } catch {}
     setUp(false);
+  };
+
+  const handleUrlChange = (newPath: string) => {
+    // Delete old uploaded file if replaced with different path
+    if (src && src.startsWith("/uploads/") && newPath !== src) {
+      const session = JSON.parse(localStorage.getItem("eape_admin_session") || "{}");
+      const token = session.token || "";
+      fetch(UPLOAD_ENDPOINT, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ path: src }),
+      }).catch(() => {});
+    }
+    onUpload(newPath);
   };
 
   const copyUrl = () => {
@@ -295,7 +317,7 @@ function UploadCell({ src, label, onUpload, onRemove, canRemove, round, extra }:
         <input
           value={src || ""}
           onClick={(e) => (e.target as HTMLInputElement).select()}
-          onChange={(e) => onUpload(e.target.value)}
+          onChange={(e) => handleUrlChange(e.target.value)}
           style={styles.urlInput}
         />
         <button onClick={copyUrl} style={styles.copyBtn}>Copy</button>
