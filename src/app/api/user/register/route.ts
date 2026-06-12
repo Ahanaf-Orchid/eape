@@ -103,12 +103,12 @@ export async function POST(req: NextRequest) {
 
     let taskMxp = 0;
     const campaign = configGet("campaign") as Record<string, unknown> | null;
-    const campaignTasks = (campaign?.tasks as Array<Record<string, unknown>>) || [];
+    const campaignTasks = (campaign?.tasks || {}) as Record<string, Record<string, unknown>>;
 
     for (const taskId of tasks) {
-      const taskDef = campaignTasks.find((t) => t.taskId === taskId);
-      if (taskDef && taskDef.rewardXp !== undefined) {
-        taskMxp += Number(taskDef.rewardXp) || 0;
+      const taskDef = campaignTasks[taskId];
+      if (taskDef) {
+        taskMxp += Number(taskDef.points) || Number(taskDef.rewardXp) || 0;
       }
     }
 
